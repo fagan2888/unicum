@@ -42,8 +42,6 @@ setup(
         'Topic :: Education',
         'Topic :: Office/Business',
         'Topic :: Office/Business :: Financial',
-        'Topic :: Office/Business :: Financial :: Investment',
-        'Topic :: Office/Business :: Financial :: RiskManagement',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Mathematics',
         'Topic :: Utilities',
