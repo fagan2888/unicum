@@ -2,8 +2,12 @@
 unicum
 ======
 
-.. image:: https://img.shields.io/codeship/433f24a0-9d5e-0134-66ae-4e318545e956/master.svg
-    :target: https://codeship.com//projects/188629
+.. image:: https://img.shields.io/codeship/84595e40-4619-0135-2581-6682ffd1d80e/master.svg
+    :target: https://codeship.com//projects/231331
+
+.. image:: https://readthedocs.org/projects/unicum/badge
+    :target: http://unicum.readthedocs.io
+
 
 `unicum` consists of multiple object implementations that implement various factory pattern.
 All types merge into on type `VisibleObject` and each type contributes bits and piece.
