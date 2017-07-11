@@ -133,7 +133,7 @@ class IndexedList(list):
 class DataRange(IndexedList):
     """ DataRange class """
 
-    def __init__(self, iterable=None, value_types=(float, int, str, type(None)), none_alias=(None, ' ', '', None)):
+    def __init__(self, iterable=None, value_types=(float, int, str, type(None)), none_alias=(None, ' ', '', 'None')):
         self._value_types = value_types
         self._none_alias = none_alias
 

@@ -63,5 +63,5 @@ class VisibleAttributeList(AttributeList):
 class VisibleDataRange(DataRange):
     def __init__(self, iterable=None,
                  value_types=(float, int, str, type(None), VisibleObject),
-                 none_alias=(None, ' ', '', None)):
+                 none_alias=(None, ' ', '', 'None')):
         super(VisibleDataRange, self).__init__(iterable, value_types, none_alias)
