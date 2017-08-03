@@ -12,22 +12,6 @@
 
 import functools
 
-'''
-    cache keys are not case sensitive, eg actACT for ActAct
-    cache returns proper capitalisation, eg ActAct for actact
-    caches named objects by obj.name
-    caches unnamed objects by obj.__class__.__name__
-
-    class actact(daycount): pass
-
-    daycount()==cache('daycount')
-    daycount()==actact()
-    daycount('30/360')==Thirty360()
-
-    pricer()==
-
-'''
-
 
 def _to_string(cls):
     return str(cls.__name__)
