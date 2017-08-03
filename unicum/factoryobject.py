@@ -44,17 +44,6 @@ class FactoryObject(object):
                 return getattr(cls, attr)
         raise TypeError
 
-    def x__new__(cls, *args):
-        name = str(args[0]) if args else cls.__name__
-        instance = cls._get(name)
-        if instance is None:
-            instance = object.__new__(cls, *args)
-            instance.__init__(*args)
-        return instance
-
-    def x__init__(self, *args):
-        super(FactoryObject, self).__init__()
-
     def __repr__(self):
         return str(self) + '(' + str(id(self)) + ')'
 

@@ -52,6 +52,8 @@ class LinkedObject(object):
         :param attr: attribute name to register link to
         """
         name = self._name
+        if not name:
+            return self
         l = self.__class__._get_links()
         if name not in l:
             l[name] = set()
@@ -65,6 +67,8 @@ class LinkedObject(object):
         removes link from obj.attr
         """
         name = self._name
+        if not name:
+            return self
         l = self.__class__._get_links()
         v = (None, obj) if attr is None else (obj, attr)
         if v in l[name]:
@@ -78,6 +82,8 @@ class LinkedObject(object):
         redirects all links to self (the new linked object)
         """
         name = self._name
+        if not name:
+            return self
         l = self.__class__._get_links()
         to_be_changed = list()
         if name in l:

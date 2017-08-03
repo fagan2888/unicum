@@ -18,7 +18,6 @@ from os import getcwd
 from unicum import DecoratorFactory, SingletonObject, FactoryObject, ObjectList, \
     LinkedObject, PersistentObject, AttributeList, VisibleObject, VisibleAttributeList
 from unicum.datarange import DataRange
-from unicum.olddatarange import IndexedList
 
 
 class TestDummy(object):
@@ -508,61 +507,6 @@ class PersistentTest(TestCase):
         b = [m] + a
         self.assertTrue(not isinstance(b, AttributeList))
         self.assertTrue(m in b)
-
-
-class IndexedListTest(TestCase):
-    def setUp(self):
-        self.values = range(100)
-        self.keys = [str(i) for i in self.values]
-        self.list = IndexedList(self.keys, self.values)
-
-    def test_list(self):
-        indexed_list = IndexedList(self.list)
-        for il, org in zip(indexed_list.keys(), self.keys):
-            self.assertEqual(il, org)
-        for il, org in zip(indexed_list.keys(), self.values):
-            self.assertEqual(indexed_list[il], org)
-        for il, org in zip(indexed_list.values(), self.values):
-            self.assertEqual(il, org)
-        for k, v in indexed_list.items():
-            self.assertEqual(k, str(v))
-
-        self.assertEqual(indexed_list[2:50], indexed_list['2':'49'])
-        self.assertEqual(indexed_list[2:], indexed_list['2':])
-        self.assertEqual(indexed_list[:2], indexed_list[:'1'])
-
-        new = ['A', 'B']
-        indexed_list['3':'5'] = new
-        self.assertEqual(indexed_list[3], new[0])
-        self.assertEqual(indexed_list[4], new[1])
-        self.assertEqual(indexed_list[3:5], new)
-
-    def test_set(self):
-        indexed_list = IndexedList(self.list)
-        self.assertEqual(len(indexed_list), 100)
-
-        indexed_list.append(100)
-        self.assertEqual(len(indexed_list), 101)
-        self.assertEqual(indexed_list[100], 100)
-
-        indexed_list.insert('50', -1)
-        self.assertEqual(len(indexed_list), 102)
-        self.assertEqual(indexed_list[50], -1)
-        self.assertEqual(indexed_list[49], 49)
-        self.assertEqual(indexed_list[51], 50)
-
-        indexed_list.extend(['a'], ['b'])
-        self.assertEqual(indexed_list.keys()[-1], 'a')
-        self.assertEqual(indexed_list[-1], 'b')
-
-        new_il = IndexedList(['c'], ['d'])
-        indexed_list.extend(new_il)
-        self.assertEqual(indexed_list.keys()[-1], 'c')
-        self.assertEqual(indexed_list[-1], 'd')
-
-        new_il = IndexedList(['c'], ['c'])
-        l = (lambda x: indexed_list.extend(x))
-        self.assertRaises(KeyError, l, new_il)
 
 
 class DataRangeTest(TestCase):

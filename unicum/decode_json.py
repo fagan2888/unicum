@@ -13,6 +13,21 @@
 import json
 
 
+def load_json_dicts(file_name):
+    """
+    Loads the json dictionary from the given file.
+    """
+    file_text = '{todo:"todovalue"}' #read_file_text(file_name) todo
+    ret = parse_json_str(file_text)
+    return ret
+
+def parse_json_str(json_str):
+    """
+    Parses the given json string in a dictionary.
+    """
+    return json.loads(json_str, object_hook=decode_dict)
+
+
 def decode_list(data):
     rv = []
     for item in data:

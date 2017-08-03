@@ -13,6 +13,7 @@
 import datetime
 import getpass
 import json
+from json_writer import JSONWriter
 
 from decode_json import decode_dict as _decode_dict
 
@@ -85,10 +86,17 @@ class PersistentObject(object):
     @classmethod
     def _from_class(cls, class_name, module_name=None, *args, **kwargs):
         """ class method to create object of a given class """
+        def _get_module(module_name):
+            names = module_name.split(".")
+            module = __import__(names[0])
+            for i in xrange(1, len(names)):
+                module = getattr(module, names[i])
+            return module
 
         if module_name:
             # module = globals()[module_name]
-            module = __import__(module_name)
+            # module = __import__(module_name)
+            module = _get_module(module_name)
             class_ = getattr(module, class_name)
         else:
             class_ = globals()[class_name]
@@ -141,10 +149,31 @@ class PersistentObject(object):
                 d[self.__class__._from_visible(a)] = v
         return d
 
-    def to_json(self, indent=2, all_properties=False):
+    def to_json(self, indent="\t", all_properties=False):
+        def split_to_props_and_tabs(obj_dict):
+            props = {}
+            tabs = {}
+            for k, v in obj_dict.items():
+                if isinstance(v, list):
+                    tabs[k] = v
+                else:
+                    props[k] = v
+            return props, tabs
+
         obj_dict = self.to_serializable(all_properties=all_properties)
+        props, tabs = split_to_props_and_tabs(obj_dict)
+        w = JSONWriter(indent=indent)
+        prop_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
+        json_lines = w.get_dict_in_json_list(props, prop_order)
+        for range_lable, range_rows in tabs.items():
+            datarange_json = w.write_datarange_from_rows(range_rows, 20) # todo get column width before
+            prop_val = w.write_property_value(range_lable, datarange_json, value_in_quotes=False)
+            json_lines.append(prop_val)
+        ret = w.write_obj_from_lines(json_lines, new_line_separator=", \n")
+        return ret
+
         # todo better pretty print for DataRange and AttributeList (nested list)
-        return json.dumps(obj_dict, indent=indent, sort_keys=True)
+        # return json.dumps(obj_dict, indent=indent, sort_keys=True)
 
     def modify_object(self, property_name, property_value=None):
         """
@@ -214,7 +243,12 @@ class PersistentObject(object):
 
     def _rebuild_object(self):
         """ method to initiate a visible object rebuild """
-        pass
+        return self
+
+    def _is_modified_property(self, property):
+        if type(property) is str:
+            return property in self._modified_members
+        return False
 
 
 # container class of list of objects
