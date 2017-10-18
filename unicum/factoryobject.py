@@ -20,9 +20,13 @@ class FactoryType(type):
         name = kwargs['name'] if 'name' in kwargs else name
         instance = cls._get(name)
         if instance is None:
-            instance = object.__new__(cls, *args, **kwargs)
+            instance = cls.__new__(cls, *args, **kwargs)
             instance.__init__(*args, **kwargs)
         return instance
+
+    @classmethod
+    def _get(cls, key, default=None):
+        return default
 
 
 class FactoryObject(object):
