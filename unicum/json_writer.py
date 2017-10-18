@@ -135,6 +135,53 @@ class JSONWriter(object):
             return str(value)
         return '"' + str(value) + '"'
 
+    def write_dict_to_json(self, dictionary, iteration_level=0):
+        """
+        writes the dictionary to json, recursively.
+        :param dictionary:
+        :param iteration_level:
+        :return:
+        """
+
+        def _tabs():
+            return iteration_level * "\t"
+
+        lines = []
+        for k, v in dictionary.items():
+            if isinstance(v, dict):
+                dict_json = self.write_dict_to_json(v, iteration_level + 1)
+                line = _tabs() + self.write_property_value(k, dict_json, value_in_quotes=False)
+                lines.append(line)
+            elif isinstance(v, (list, tuple)):
+                line = self.write_list_to_json(v, iteration_level + 1)
+                lines.append(line)
+            else:
+                line = _tabs() + self.write_property_value(k, v)
+                lines.append(line)
+        return self.write_obj_from_lines(lines, right_envolop=_tabs() + "}")
+
+    def write_list_to_json(self, value_list, iteration_level=0):
+        """
+        write the list to json, recursively.
+        :param value_list:
+        :param iteration_level:
+        :return:
+        """
+
+        def _tabs():
+            return iteration_level * "\t"
+
+        lines = list()
+        for v in value_list:
+            if isinstance(v, dict):
+                dict_json = self.write_dict_to_json(v, iteration_level + 1)
+                lines.append(dict_json)
+            elif isinstance(v, (list, tuple)):
+                lines.append(self.write_list_to_json(v, iteration_level + 1))
+            else:
+                lines.append(self._in_quotes_if_necessary(v))
+        return self.write_obj_from_lines(lines, _tabs() + "[", _tabs() + "]")
+
     @staticmethod
     def _is_a_number(value):
         if isinstance(value, (float, int)):

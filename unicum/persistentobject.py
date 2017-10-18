@@ -245,9 +245,14 @@ class PersistentObject(object):
         """ method to initiate a visible object rebuild """
         return self
 
-    def _is_modified_property(self, property):
-        if type(property) is str:
-            return property in self._modified_members
+    def _is_modified_property(self, prop):
+        """
+        True, if the given property is in the modifed members
+        :param prop:
+        :return:
+        """
+        if type(prop) is str:
+            return prop in self._modified_members
         return False
 
 

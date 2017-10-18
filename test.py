@@ -13,7 +13,7 @@
 from datetime import datetime
 from json import dumps
 from copy import copy, deepcopy
-from unittest import TestCase, main, TestLoader, TextTestRunner
+from unittest import TestCase, TestLoader, TextTestRunner
 from os import getcwd
 from unicum import DecoratorFactory, SingletonObject, FactoryObject, ObjectList, \
     LinkedObject, PersistentObject, AttributeList, VisibleObject, VisibleAttributeList
@@ -425,7 +425,8 @@ class PersistentTest(TestCase):
         j = dumps(e, indent=2, sort_keys=True)
         o = PersistentObject.from_json(j)
         self.assertTrue(type(o) is YourPO)
-        self.assertEqual(o.to_json(indent=2), j)
+        oj = o.to_json(indent=2)
+        self.assertEqual(oj, j)
         self.assertEqual(o.to_serializable(), PersistentObject.from_serializable(e).to_serializable())
 
     def test_modify_obj(self):
