@@ -145,35 +145,13 @@ class PersistentObject(object):
             if a in self._modified_members or self._from_visible(a) in ['Name', 'Class', 'Module'] or all_properties:
                 v = getattr(self, a)
                 v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
-                v = v if isinstance(v, (float, int, list, type(None))) else str(v)
+                v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
                 d[self.__class__._from_visible(a)] = v
         return d
 
-    def to_json(self, indent="\t", all_properties=False):
-        def split_to_props_and_tabs(obj_dict):
-            props = {}
-            tabs = {}
-            for k, v in obj_dict.items():
-                if isinstance(v, list):
-                    tabs[k] = v
-                else:
-                    props[k] = v
-            return props, tabs
-
+    def to_json(self, all_properties=False, dumps=json.dumps, **kwargs):
         obj_dict = self.to_serializable(all_properties=all_properties)
-        props, tabs = split_to_props_and_tabs(obj_dict)
-        w = JSONWriter(indent=indent)
-        prop_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
-        json_lines = w.get_dict_in_json_list(props, prop_order)
-        for range_lable, range_rows in tabs.items():
-            datarange_json = w.write_datarange_from_rows(range_rows, 20) # todo get column width before
-            prop_val = w.write_property_value(range_lable, datarange_json, value_in_quotes=False)
-            json_lines.append(prop_val)
-        ret = w.write_obj_from_lines(json_lines, new_line_separator=", \n")
-        return ret
-
-        # todo better pretty print for DataRange and AttributeList (nested list)
-        # return json.dumps(obj_dict, indent=indent, sort_keys=True)
+        return dumps(obj_dict, **kwargs)
 
     def modify_object(self, property_name, property_value=None):
         """
@@ -228,9 +206,8 @@ class PersistentObject(object):
                 return
 
         # check type of property_value
-        current_property_value = getattr(self, property_name)
-        if not isinstance(property_value, type(current_property_value)):
-            property_value = current_property_value.__class__(property_value)
+        if not self._validate(property_name, property_value):
+            property_value = self._cast(property_name, property_value)
 
         # finally set new property value
         setattr(self, property_name, property_value)
@@ -240,6 +217,14 @@ class PersistentObject(object):
         self._user_update = getpass.getuser() if hasattr(getpass, 'getuser') else 'NoUser'
         self._version += 1
         self._modified_members.append(property_name)
+
+    def _validate(self, property_name, property_value):
+        current_property_value = getattr(self, property_name)
+        return isinstance(property_value, type(current_property_value))
+
+    def _cast(self, property_name, property_value):
+        current_property_value = getattr(self, property_name)
+        return current_property_value.__class__(property_value)
 
     def _rebuild_object(self):
         """ method to initiate a visible object rebuild """
@@ -254,6 +239,36 @@ class PersistentObject(object):
         if type(prop) is str:
             return prop in self._modified_members
         return False
+
+
+class PersistentList(list):
+
+    @classmethod
+    def from_serializable(cls, item):
+        return cls(item)
+
+    def to_serializable(self, level=0):
+        r = list()
+        for v in self:
+            v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
+            v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
+            r.append(v)
+        return r
+
+
+class PersistentDict(dict):
+
+    @classmethod
+    def from_serializable(cls, item):
+        return cls(item)
+
+    def to_serializable(self, level=0):
+        r = dict()
+        for k, v in self.items():
+            v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
+            v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
+            r[k] = v
+        return r
 
 
 # container class of list of objects
