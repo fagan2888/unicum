@@ -2,6 +2,7 @@
 This module contains the JSON Writer class.
 """
 
+
 class JSONWriter(object):
     """
     A writer to write json formated strings.
@@ -13,6 +14,23 @@ class JSONWriter(object):
         """
         self._default_prefix = ' ' * indent if type(indent) is int else indent
 
+    @classmethod
+    def dumps(cls, o, indent="\t", property_order=()):
+        w = cls(indent=indent)
+        _natives = int, long, float, bool, str, type(None)
+        _iterables = list,
+
+        props = dict((k, v) for k, v in o.items() if isinstance(v, _natives))
+        tabs = dict((k, v) for k, v in o.items() if isinstance(v, _iterables))
+
+        json_lines = w.get_dict_in_json_list(props, property_order)
+        for range_lable, range_rows in tabs.items():
+            datarange_json = w.write_datarange_from_rows(range_rows, 20) # todo get column width before
+            prop_val = w.write_property_value(range_lable, datarange_json, value_in_quotes=False)
+            json_lines.append(prop_val)
+        ret = w.write_obj_from_lines(json_lines, new_line_separator=", \n")
+
+        return ret
 
     def write_obj(self, properties, property_order, table_names, tables):
         """

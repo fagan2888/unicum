@@ -15,9 +15,14 @@ from json import dumps
 from copy import copy, deepcopy
 from unittest import TestCase, TestLoader, TextTestRunner
 from os import getcwd
-from unicum import DecoratorFactory, SingletonObject, FactoryObject, ObjectList, \
-    LinkedObject, PersistentObject, AttributeList, VisibleObject, VisibleAttributeList
+from unicum import DecoratorFactory, SingletonObject
+from unicum import FactoryObject, ObjectList, LinkedObject
+from unicum import PersistentObject, PersistentList, PersistentDict, AttributeList, JSONWriter
+from unicum import VisibleObject, VisibleAttributeList
 from unicum.datarange import DataRange
+
+
+_property_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
 
 
 class TestDummy(object):
@@ -329,6 +334,7 @@ class FactoryTest(TestCase):
         self.assertEqual(o.get(eur), eur)
         self.assertEqual(o.get('EUR'), eur)
 
+
 class MyLO(LinkedObject):
     def __init__(self):
         super(MyLO, self).__init__()
@@ -425,7 +431,7 @@ class PersistentTest(TestCase):
         j = dumps(e, indent=2, sort_keys=True)
         o = PersistentObject.from_json(j)
         self.assertTrue(type(o) is YourPO)
-        oj = o.to_json(indent=2)
+        oj = o.to_json(indent=2, property_order=_property_order, dumps=JSONWriter.dumps)
         self.assertEqual(oj, j)
         self.assertEqual(o.to_serializable(), PersistentObject.from_serializable(e).to_serializable())
 
@@ -508,6 +514,27 @@ class PersistentTest(TestCase):
         b = [m] + a
         self.assertTrue(not isinstance(b, AttributeList))
         self.assertTrue(m in b)
+
+    def test_persistentlist(self):
+        l = PersistentList(range(10))
+        l.append(MyPO())
+        s = l.to_serializable()
+        self.assertNotEqual(l, s)
+        for i, j in zip(l, s):
+            if hasattr(i, 'to_serializable'):
+                i = i.to_serializable(1)
+            self.assertEqual(i, j)
+        # todo: add tests interacting with PersistenObject
+
+    def test_persistentdict(self):
+        l = PersistentDict({'A':1, 'B': MyPO(), 'C': 'ABC'})
+        s = l.to_serializable()
+        self.assertNotEqual(l, s)
+        for i, j in zip(l, s):
+            if hasattr(i, 'to_serializable'):
+                i = i.to_serializable(1)
+            self.assertEqual(i, j)
+        # todo: add tests interacting with PersistenObject
 
 
 class DataRangeTest(TestCase):
@@ -741,6 +768,7 @@ class VisibleTest(TestCase):
         VisibleObject('ME').register()
         o = VisibleObject._from_class('VisibleObject', 'unicum', 'ME')
         self.assertEqual(o, VisibleObject('ME'))
+
 
 if __name__ == '__main__':
     import sys
