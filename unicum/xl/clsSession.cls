@@ -200,7 +200,7 @@ Private Function send_win(ByVal type_s As String, ByVal url As String, Optional 
 
     ElseIf type_s = "DELETE" Then
         Debug.Print "WinHttpRequest.Open ""DELETE"", " & url & ", False"
-        WinHttpReq.Open "POST", url, False
+        WinHttpReq.Open "DELETE", url, False
     
     Else: Err.Raise vbObjectError + 110, , "Cannot handle HttpRequest " & type_s
 

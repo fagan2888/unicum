@@ -18,48 +18,17 @@ End Sub
 
 Sub BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)
 
-Dim Handles As Variant
-Dim ObjectType As Variant
-ObjectType = Empty
-
-' set outupt anchor
-    Dim Anchor As Worksheet
-    Set Anchor = Worksheets("OBJECT")
-    
-' get in default folder
-    d_folder = GetSetup("WORKBOOK", "DefaultFolder")
-
 ' build list of obj
     For Each sel In Target
-        request = sel.Value
-        request = Split(request, ":")(0)
         ' try simple LoadObjsFromFile
-        contents = Application.Run("LoadObjsFromFile", , , request)
         ' try LoadObjsFromFile from default folder
-        If Not IsArray(contents) Then: contents = Application.Run("LoadObjsFromFile", , , d_folder & "\" & request)
         ' try open obj and write to a new sheet
-        WriteMultObject contents, Anchor
     Next
         
 ' get object from cache
     For Each sel In Target
-        request = sel.Value
-        request = Split(request, ":")(0)
-        ' try open obj and write to a new sheet
-        List = Application.Run("ListObj")
-        If IsArray(List) Then
-            For k = LBound(List, 1) To UBound(List, 1)
-                If request = List(k, 1) Then
-                    WriteObject List(k, 1), List(k, 2), Anchor
-                End If
-            Next
-        End If
+        ' check if object exists in cache
+        ' if yes, open obj and write to a new sheet
     Next
 
 End Sub
-
-
-
-
-' *** helper ***
-
