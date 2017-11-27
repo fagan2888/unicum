@@ -411,7 +411,7 @@ class PersistentTest(TestCase):
                 # print a, MyPO._is_visible(a), MyPO._to_visible(a), MyPO._from_visible(a)
 
     def test_obj_to_dict(self):
-        d = MyPO().to_serializable(all_properties=True)
+        d = MyPO().to_serializable(all_properties_flag=True)
         self.assertTrue('Class' in d)
         self.assertTrue(d['MyProperty'] == 'It is mine.')
 
@@ -705,7 +705,7 @@ class VisibleTest(TestCase):
 
     def test_persistence(self):
         obj = MyVO('My')
-        dic = obj.to_serializable(all_properties=True)
+        dic = obj.to_serializable(all_properties_flag=True)
         # test None
         self.assertEqual(dic['NoneProp'], obj.none)
         # test str

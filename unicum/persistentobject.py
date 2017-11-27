@@ -139,53 +139,53 @@ class PersistentObject(object):
         else:
             return [cls.from_serializable(d) for d in obj_dict]
 
-    def to_serializable(self, level=0, all_properties=False):
+    def to_serializable(self, level=0, all_properties_flag=False):
         d = dict()
         for a in [a for a in dir(self) if self.__class__._is_visible(a)]:
-            if a in self._modified_members or self._from_visible(a) in ['Name', 'Class', 'Module'] or all_properties:
+            if a in self._modified_members or self._from_visible(a) in ['Name', 'Class', 'Module'] or all_properties_flag:
                 v = getattr(self, a)
                 v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
                 v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
                 d[self.__class__._from_visible(a)] = v
         return d
 
-    def to_json(self, all_properties=False, dumps=json.dumps, **kwargs):
-        obj_dict = self.to_serializable(all_properties=all_properties)
+    def to_json(self, all_properties_flag=False, dumps=json.dumps, **kwargs):
+        obj_dict = self.to_serializable(all_properties_flag=all_properties_flag)
         return dumps(obj_dict, **kwargs)
 
-    def modify_object(self, property_name, property_value=None):
+    def modify_object(self, property_name, property_value_variant=None):
         """
         api visible method for modifying visible object properties
 
         :param property_name: property name
         :type property_name: string, list or dict
-        :param property_value: property value, must be `None` if property_name is of type `dict`
-        :type property_value: various or None
+        :param property_value_variant: property value, must be `None` if property_name is of type `dict`
+        :type property_value_variant: various or None
         :return: modified object
         :rtype: unicum.lfojbect.VisibleObject
         """
         if type(property_name) is dict:
-            property_value = property_name.values()
+            property_value_variant = property_name.values()
             property_name = property_name.keys()
 
         if isinstance(property_name, str):
-            property_name, property_value = [property_name], [property_value]
-        assert len(property_name) == len(property_value)
+            property_name, property_value_variant = [property_name], [property_value_variant]
+        assert len(property_name) == len(property_value_variant)
 
         # convert names into visible
         property_name = self.__class__._to_visible(property_name)
 
         # loop over properties to set
-        for n, v in zip(property_name, property_value):
-            self._modify_property(n, v)
+        for n, v in zip(property_name, property_value_variant):
+            self._modify_property(n.encode('ascii','ignore'), v)
 
         # rebuild object in order to maintain consistency
         self._rebuild_object()
         return self
 
-    def _modify_property(self, property_name, property_value):
+    def _modify_property(self, property_name, property_value_variant):
         # avoid circles
-        if property_value is self:
+        if property_value_variant is self:
             raise ValueError, 'Attributes must not be recursively. Not mapping self to %s.' % property_name
 
         # handle not admissible property_name type
@@ -205,12 +205,12 @@ class PersistentObject(object):
                 # raise ValueError, msg
                 return
 
-        # check type of property_value
-        if not self._validate(property_name, property_value):
-            property_value = self._cast(property_name, property_value)
+        # check type of property_value_variant
+        if not self._validate(property_name, property_value_variant):
+            property_value_variant = self._cast(property_name, property_value_variant)
 
         # finally set new property value
-        setattr(self, property_name, property_value)
+        setattr(self, property_name, property_value_variant)
 
         # update timestamps and version
         self._ts_update = datetime.datetime.now()
@@ -218,13 +218,17 @@ class PersistentObject(object):
         self._version += 1
         self._modified_members.append(property_name)
 
-    def _validate(self, property_name, property_value):
+    def _validate(self, property_name, property_value_variant):
         current_property_value = getattr(self, property_name)
-        return isinstance(property_value, type(current_property_value))
+        if isinstance(current_property_value, str) and isinstance(property_value_variant, unicode):
+            property_value_variant = property_value_variant.encode('ascii', 'ignore')
+        return isinstance(property_value_variant, type(current_property_value))
 
-    def _cast(self, property_name, property_value):
+    def _cast(self, property_name, property_value_variant):
         current_property_value = getattr(self, property_name)
-        return current_property_value.__class__(property_value)
+        if isinstance(current_property_value, str) and isinstance(property_value_variant, unicode):
+            property_value_variant = property_value_variant.encode('ascii', 'ignore')
+        return current_property_value.__class__(property_value_variant)
 
     def _rebuild_object(self):
         """ method to initiate a visible object rebuild """
