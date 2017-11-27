@@ -26,7 +26,7 @@ setup(
     url='https://github.com/pbrisk/unicum',
     bugtrack_url='https://github.com/pbrisk/unicum/issues',
     license='Apache License 2.0',
-    packages=['unicum'],
+    packages=['unicum','unicum.xl'],
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
     platforms='any',
     classifiers=[
