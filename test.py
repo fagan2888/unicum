@@ -15,7 +15,7 @@ from json import dumps
 from copy import copy, deepcopy
 from unittest import TestCase, TestLoader, TextTestRunner
 from os import getcwd
-from unicum import DecoratorFactory, SingletonObject
+from unicum import SingletonObject
 from unicum import FactoryObject, ObjectList, LinkedObject
 from unicum import PersistentObject, PersistentList, PersistentDict, AttributeList, JSONWriter
 from unicum import VisibleObject, VisibleAttributeList
@@ -27,88 +27,6 @@ _property_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
 
 class TestDummy(object):
     pass
-
-
-class CacheTest(TestCase):
-    def setUp(self):
-        self.cache = DecoratorFactory()
-
-        class UnnamedObject(object):
-            def __init__(self, *args, **kargs):
-                pass
-
-            def __str__(self):
-                return self.__class__.__name__
-
-            def to_serializable(self, level=0):
-                return str(self)
-
-        class DayCount(UnnamedObject):
-            pass
-
-        self.DayCount = DayCount
-
-    def test_NamedObject(self):
-        # - test NamedObject -
-
-        @self.cache.by_key
-        class NamedObject(object):
-            def __init__(self, name='last'):
-                self.name = name
-
-        first = NamedObject('First')
-        self.cache['Second'] = first
-        second = NamedObject('second')
-        self.assertEqual(first, second)
-
-        third = NamedObject('Third')
-        self.assertNotEqual(first, third)
-        self.assertEqual(third, NamedObject('third'))
-
-        self.cache.pop('third')
-        self.assertNotEqual(third, NamedObject('third'))
-
-        self.cache['Forth'] = NamedObject('first')
-        forth = NamedObject('Forth')
-        self.assertEqual(NamedObject('first'), forth)
-        self.assertEqual(second, NamedObject('forth'))
-
-        self.cache['Fifth'] = NamedObject('first')
-        self.assertEqual(second, NamedObject('fifth'))
-        self.cache.pop('FIFTH')
-        self.assertNotIn('fifth', self.cache)
-
-        last = NamedObject()
-        self.assertNotEqual(last, NamedObject())
-        self.assertNotIn('NamedObject', self.cache)
-
-        name_objects = DecoratorFactory(self.cache.cache, NamedObject)
-        with self.assertRaises(KeyError):
-            name_objects()
-
-    def test_UnnamedObject(self):
-        # - test UnnamedObject -
-
-        @self.cache.by_class_name
-        class ActAct(self.DayCount):
-            pass
-
-        @self.cache.by_class_name
-        class Thirty360(self.DayCount):
-            pass
-
-        Thirty360()
-        self.cache['Act/Act'] = ActAct()
-        self.cache['Act_Act'] = ActAct()
-        self.assertEqual(self.cache['Act/ACT'], ActAct())
-        self.assertEqual(self.cache['ACTACT'], self.cache['ACT/act'])
-
-        day_count = DecoratorFactory(self.cache.cache, self.DayCount, 'ActAct')
-        self.assertEqual(day_count(), ActAct())
-        self.assertEqual(day_count('actact'), ActAct())
-
-        self.assertEqual(ActAct().to_serializable(), 'ActAct')
-        self.assertEqual(self.cache['Act/ACT'].to_serializable(), 'ActAct')
 
 
 class SingletonTest(TestCase):
