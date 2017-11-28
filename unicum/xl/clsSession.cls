@@ -116,7 +116,7 @@ Private Sub close_session()
 End Sub
 
 
-' *** url helper ***
+' *** url helpers ***
 
 Private Function url_path(Optional ByVal p1 As String, Optional ByVal p2 As String, Optional ByVal p3 As String, Optional ByVal p4 As String) As String
     url_path = ""

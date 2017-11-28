@@ -1,28 +1,39 @@
-Attribute VB_Name = "helper"
+Attribute VB_Name = "code"
+Option Private Module
 
-Sub PasteValue()
-' PasteValue Macro
-' Keyboard Shortcut: Ctrl+w
-On Error Resume Next
-    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
-End Sub
 
-Sub PasteValueTranspose()
-' PasteValue Macro
-' Keyboard Shortcut: Ctrl+t
-On Error Resume Next
-    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks:=False, Transpose:=True
-End Sub
+' Excel macro to import all VBA source code into this project from given folder
+' Requires enabling the Excel setting in Options/Trust Center/Trust Center Settings/Macro Settings/Trust access to the VBA project object model
+Private Sub loadCode(Optional ByVal FolderName As String)
 
-Sub ExtractSheet()
-' extractSheet Makro
-' Tastenkombination: Strg+m
-    ActiveSheet.Move
+For Each FileName In objFSO.GetFolder(FolderName).Files
+    ext = Right(FileName, 3)
+    If helpers.inArray(ext, Arrray("cls", "bas")) Then
+        path = FolderName + Application.PathSeparator + FileName
+        cmpComponents.Import path
+    
+                    
+        On Error Resume Next
+        Err.Clear
+    
+        If Err.Number <> 0 Then
+            Call MsgBox("Failed to import " & FileName & " into project.", vbCritical)
+        Else
+            count = count + 1
+            Debug.Print "Imported " & Left$(FileName & ":" & Space(Padding), Padding) & path
+        End If
+    
+        On Error GoTo 0
+
+    End If
+Next
+
 End Sub
+    
 
 ' Excel macro to export all VBA source code in this project to text files for proper source control versioning
 ' Requires enabling the Excel setting in Options/Trust Center/Trust Center Settings/Macro Settings/Trust access to the VBA project object model
-Private Sub ExportVBACode()
+Private Sub exportCode()
     Const Module = 1
     Const ClassModule = 2
     Const Form = 3
@@ -67,5 +78,6 @@ Private Sub ExportVBACode()
         On Error GoTo 0
     Next
 End Sub
+
 
 

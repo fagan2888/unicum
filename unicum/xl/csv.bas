@@ -58,13 +58,13 @@ Public Function ReDimPreserve(aArrayToPreserve As Variant, nNewFirstUBound As Va
     End If
 End Function
 
-Function Range2Csv(rng As Variant) As String
+Function Range2Csv(Rng As Variant) As String
 
     csvStr = CSV_START
-    For i = LBound(rng, 1) To UBound(rng, 1)
+    For i = LBound(Rng, 1) To UBound(Rng, 1)
         If csvStr <> CSV_START Then csvStr = csvStr & CSV_CRLF
         'inner = Application.Transpose(Application.Transpose(Line.Value2))
-        inner = rng(i)
+        inner = Rng(i)
         inner = cast(inner)
         inner = Join(inner, CSV_SEP)
         csvStr = csvStr & CSV_LINE_START & inner & CSV_LINE_END

@@ -10,6 +10,14 @@ Attribute VB_Exposed = True
 
 Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)
 
-    menu.BeforeDoubleClick Target, Cancel
+    controls.DoubleClick Target, Cancel
 
 End Sub
+
+
+Private Sub Worksheet_SelectionChange(ByVal Target As Range)
+
+    handlers.showShape "Logo"
+
+End Sub
+

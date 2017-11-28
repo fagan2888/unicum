@@ -16,10 +16,10 @@ Function startSession(Optional ByVal url As String, Optional ByVal user As Strin
 End Function
 
 
-Function createObject(ByRef rng As Range)
-    ReDim outArray(LBound(rng.Rows.Value) To UBound(rng.Rows.Value))
+Function createObject(ByVal Rng As Range)
+    ReDim outArray(LBound(Rng.Rows.Value) To UBound(Rng.Rows.Value))
     cnt = LBound(outArray)
-    For Each Line In rng.Rows
+    For Each Line In Rng.Rows
         outArray(cnt) = Application.Transpose(Application.Transpose(Line.Value))
         cnt = cnt + 1
     Next
@@ -57,10 +57,14 @@ Function removeObject(ObjectName As String)
 End Function
 
 
-Function showObjectCache()
-    rng_str = session.call_session_get("keys", "VisibleObject")
+Function showObjectCache(Optional ByVal Transpose As Boolean)
+    rng_str = functions.session.call_session_get("keys", "VisibleObject")
     rng_array = csv.Csv2Range("[" & rng_str & "]")
-    rng_array = Application.Transpose(rng_array)
+    If Transpose = True Then rng_array = Application.Transpose(rng_array)
     ' rng_array = csv.ReDimPreserve(rng_str, 100, 100, "")
     showObjectCache = rng_array
+
+    'rng_str = Mid(rng_str, 2, Len(rng_str) - 2)
+    'rng_str = Replace(rng_str, """", "")
+    'rng_array = Split(rng_str, ",")
 End Function
