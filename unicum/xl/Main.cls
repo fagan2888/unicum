@@ -10,6 +10,6 @@ Attribute VB_Exposed = True
 
 Private Sub Worksheet_BeforeDoubleClick(ByVal Target As Range, Cancel As Boolean)
 
-    procedures.BeforeDoubleClick Target, Cancel
+    menu.BeforeDoubleClick Target, Cancel
 
 End Sub
