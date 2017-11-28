@@ -7,6 +7,7 @@ Option Private Module
 Private Sub loadCode(Optional ByVal FolderName As String)
 
 For Each FileName In objFSO.GetFolder(FolderName).Files
+
     ext = Right(FileName, 3)
     If helpers.inArray(ext, Arrray("cls", "bas")) Then
         path = FolderName + Application.PathSeparator + FileName
@@ -34,6 +35,9 @@ End Sub
 ' Excel macro to export all VBA source code in this project to text files for proper source control versioning
 ' Requires enabling the Excel setting in Options/Trust Center/Trust Center Settings/Macro Settings/Trust access to the VBA project object model
 Private Sub exportCode()
+' ExportCode Macro
+' Keyboard Shortcut: Ctrl+e
+
     Const Module = 1
     Const ClassModule = 2
     Const Form = 3

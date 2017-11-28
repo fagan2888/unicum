@@ -49,6 +49,8 @@ End Sub
 
 
 Function call_session_get(Optional ByVal func As String, Optional ByVal p1 As Variant, Optional ByVal p2 As String, Optional ByVal p3 As String, Optional ByVal p4 As String) As Variant
+    Dim path_s As String
+    Dim query_s As String
     
     validate_session
     path_s = url_path(session_id, func)

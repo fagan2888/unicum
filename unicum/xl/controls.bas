@@ -55,6 +55,10 @@ Sub ClickRed()
 End Sub
 
 Sub ClickLight()
+
+    Dim targetValue As String
+    Dim cache() As Variant
+    
     ' show cache to pick object
     targetValue = handlers.getSelectedCell()
     cache = functions.showObjectCache()(0)
@@ -73,10 +77,12 @@ Sub ClickLight()
 End Sub
 
 Sub ClickYellow()
+    Dim rng As Range
+    Dim ObjectName As String
     ' create object from range
     handlers.showShape "Logo"
-    Set Rng = ActiveSheet.Range("B6:Z200")
-    ObjectName = functions.createObject(Rng)
+    Set rng = ActiveSheet.Range("B6:Z200")
+    ObjectName = functions.createObject(rng)
     helpers.Logger "Created object " & ObjectName, "INFO"
 End Sub
 

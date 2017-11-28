@@ -6,13 +6,13 @@ Function getUserName()
 End Function
 
 Function getSetup(ByVal Property As String)
-    Set Rng = ActiveWorkbook.Sheets("Main").Range("AA:AB")
+    Set rng = ActiveWorkbook.Sheets("Main").Range("AA:AB")
     For i = 1 To 100
-        Debug.Print Rng.Cells(i, 1).Value
-        If Rng.Cells(i, 1).Value = Property Then Exit For
+        Debug.Print rng.Cells(i, 1).Value
+        If rng.Cells(i, 1).Value = Property Then Exit For
     Next
     'found = Application.WorksheetFunction.VLookup(Property, Rng, 1, False)
-    getSetup = Rng.Cells(i, 2).Value
+    getSetup = rng.Cells(i, 2).Value
 End Function
 
 Function dimArray(A)
@@ -37,8 +37,8 @@ On Error Resume Next
     dimArray = i - 1
 End Function
 
-Function toArray(ByRef Rng As Range)
-    toArray = Application.Transpose(Application.Transpose(Rng))
+Function toArray(ByRef rng As Range)
+    toArray = Application.Transpose(Application.Transpose(rng))
 End Function
 
 Function inArray(ByVal stringToBeFound As String, ByVal arr As Variant) As Boolean

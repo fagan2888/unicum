@@ -58,13 +58,16 @@ Public Function ReDimPreserve(aArrayToPreserve As Variant, nNewFirstUBound As Va
     End If
 End Function
 
-Function Range2Csv(Rng As Variant) As String
+Function Range2Csv(rng As Variant) As String
+    Dim csvStr As String
+    Dim i As Long
+    Dim inner As Variant
 
     csvStr = CSV_START
-    For i = LBound(Rng, 1) To UBound(Rng, 1)
+    For i = LBound(rng, 1) To UBound(rng, 1)
         If csvStr <> CSV_START Then csvStr = csvStr & CSV_CRLF
         'inner = Application.Transpose(Application.Transpose(Line.Value2))
-        inner = Rng(i)
+        inner = rng(i)
         inner = cast(inner)
         inner = Join(inner, CSV_SEP)
         csvStr = csvStr & CSV_LINE_START & inner & CSV_LINE_END
@@ -100,13 +103,17 @@ End Function
 '***                                                                                            ***
 '**************************************************************************************************
 
-Private Function cast(ByVal inArray As Variant)
+Private Function cast(ByVal inputArray As Variant)
+    Dim outArray() As Variant
+    Dim decimal_sep As String
+    Dim lctr As Integer
+    'Dim Value As Variant
 
-    ReDim outArray(LBound(inArray) To UBound(inArray))
+    ReDim outArray(LBound(inputArray) To UBound(inputArray))
     decimal_sep = Application.International(xlDecimalSeparator)
 
-     For lctr = LBound(inArray) To UBound(inArray)
-        Value = inArray(lctr)
+     For lctr = LBound(inputArray) To UBound(inputArray)
+        Value = inputArray(lctr)
         
         If IsEmpty(Value) Then
             Value = "null"

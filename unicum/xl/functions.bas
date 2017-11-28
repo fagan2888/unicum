@@ -16,11 +16,16 @@ Function startSession(Optional ByVal url As String, Optional ByVal user As Strin
 End Function
 
 
-Function createObject(ByVal Rng As Range)
-    ReDim outArray(LBound(Rng.Rows.Value) To UBound(Rng.Rows.Value))
+Function createObject(ByVal rng As Range)
+    Dim outArray() As Variant
+    Dim cnt As Long
+    Dim line As Range
+    Dim csv_s As String
+    
+    ReDim outArray(LBound(rng.Rows.Value) To UBound(rng.Rows.Value))
     cnt = LBound(outArray)
-    For Each Line In Rng.Rows
-        outArray(cnt) = Application.Transpose(Application.Transpose(Line.Value))
+    For Each line In rng.Rows
+        outArray(cnt) = Application.Transpose(Application.Transpose(line.Value))
         cnt = cnt + 1
     Next
     csv_s = csv.Range2Csv(outArray)
@@ -58,6 +63,9 @@ End Function
 
 
 Function showObjectCache(Optional ByVal Transpose As Boolean)
+    Dim rng_str As String
+    Dim rng_array() As Variant
+
     rng_str = functions.session.call_session_get("keys", "VisibleObject")
     rng_array = csv.Csv2Range("[" & rng_str & "]")
     If Transpose = True Then rng_array = Application.Transpose(rng_array)

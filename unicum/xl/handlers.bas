@@ -26,9 +26,9 @@ Sub writeObjectToSheet(ByVal ObjectName As String)
     objRng = functions.showObject(ObjectName, allPropFlag)
 
     For i = LBound(objRng) To UBound(objRng)
-        Line = objRng(i)
-        For j = LBound(Line) To UBound(Line)
-            TopLeftCell.Offset(i, j).Value = Line(j)
+        line = objRng(i)
+        For j = LBound(line) To UBound(line)
+            TopLeftCell.Offset(i, j).Value = line(j)
         Next
     Next
     TopLeftCell.Offset(1, 1).Select
@@ -54,8 +54,11 @@ Function getShape(ByVal nameStr As String) As Shape
 End Function
 
 Sub showShape(ByVal nameStr)
+    Dim currentShape As Shape
+    
     If Not IsArray(nameStr) Then nameStr = Array(nameStr)
-        
+    
+    
     For Each currentShape In ActiveSheet.Shapes
         If helpers.inArray(currentShape.Name, nameStr) Then
             currentShape.Visible = True
