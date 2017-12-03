@@ -1,7 +1,6 @@
-Attribute VB_Name = "functions"
-
-Public session As New clsSession
-
+Attribute VB_Name = "unicum"
+' cell function for unicum.VisibleObject methods
+' (cfg. http://github.com/pbrisk/unicum)
 
 Function startSession(Optional ByVal url As String, Optional ByVal user As String, Optional ByVal password As String) As String
     If url = "" Then url = "127.0.0.1"
@@ -16,7 +15,7 @@ Function startSession(Optional ByVal url As String, Optional ByVal user As Strin
 End Function
 
 
-Function createObject(ByVal rng As Range)
+Function createObjectFromRange(ByVal rng As Range)
     Dim outArray() As Variant
     Dim cnt As Long
     Dim line As Range
@@ -30,20 +29,35 @@ Function createObject(ByVal rng As Range)
     Next
     csv_s = csv.Range2Csv(outArray)
     csv_s = "{ ""arg0"": ""VisibleObject"", ""arg1"":" & csv_s & ", ""arg2"": ""true""}"
-    createObject = session.call_session_post("from_range", csv_s)
+    createObjectFromRange = session.call_session_post("from_range", csv_s)
 End Function
 
 
-Function getObject(ByVal ObjectClass As String, ByVal ObjectName As String)
-    getObject = session.call_session_get("create", ObjectClass, ObjectName, True)
+Function createObjectFromJson(ByVal json_s As String)
+    json_s = Replace(json_s, vbCrLf, "")
+    json_s = Replace(json_s, vbLf, "")
+    json_s = Replace(json_s, vbCr, "")
+    json_s = "{ ""arg0"": ""VisibleObject"", ""arg1"":" & json_s & ", ""arg2"": ""true""}"
+    createObjectFromJson = session.call_session_post("from_serializable", json_s)
 End Function
 
 
-Function showObject(ByVal ObjectName As String, Optional ByVal AllProperties As Boolean)
+Function createObject(ByVal ObjectClass As String, ByVal ObjectName As String)
+    createObject = session.call_session_get("create", ObjectClass, ObjectName, True)
+End Function
+
+
+Function writeObjectToJson(ByVal ObjectName As String, Optional ByVal AllProperties As Boolean)
+    writeObjectToJson = session.call_session_get("save_object_to_string", ObjectName, AllProperties)
+End Function
+
+
+Function writeObjectToRange(ByVal ObjectName As String, Optional ByVal AllProperties As Boolean)
     rng_str = session.call_session_get("to_range", ObjectName, AllProperties)
     rng_array = csv.Csv2Range(rng_str)
-    'rng_array = csv.ReDimPreserve(rng_array, 100, 100, "")
-    showObject = rng_array
+    collar = helpers.getSetup("Collar") + 1
+    rng_array = csv.Collar4Range(rng_array, collar, collar, "")
+    writeObjectToRange = rng_array
 End Function
 
 
@@ -62,17 +76,13 @@ Function removeObject(ObjectName As String)
 End Function
 
 
-Function showObjectCache(Optional ByVal Transpose As Boolean)
+Function getObjectCache(Optional ByVal Transpose As Boolean)
     Dim rng_str As String
     Dim rng_array() As Variant
 
-    rng_str = functions.session.call_session_get("keys", "VisibleObject")
+    rng_str = session.call_session_get("keys", "VisibleObject")
     rng_array = csv.Csv2Range("[" & rng_str & "]")
     If Transpose = True Then rng_array = Application.Transpose(rng_array)
-    ' rng_array = csv.ReDimPreserve(rng_str, 100, 100, "")
-    showObjectCache = rng_array
-
-    'rng_str = Mid(rng_str, 2, Len(rng_str) - 2)
-    'rng_str = Replace(rng_str, """", "")
-    'rng_array = Split(rng_str, ",")
+    'rng_array = csv.Collar4Range(rng_str, 10, 10, "")
+    getObjectCache = rng_array
 End Function
