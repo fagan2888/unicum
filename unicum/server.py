@@ -94,7 +94,13 @@ class Session(object):
             # use cls resp. self
             _cls = getattr(cls._module, kwargs.pop('cls', ''), cls._class)
             _self = kwargs.pop('self', '')
-            obj = _cls(_self) if _self else _cls
+            if _self:
+                if _self in _cls.keys():
+                    obj = _cls(_self)
+                else:
+                    raise KeyError('Object %s does not exists.' %_self)
+            else:
+                obj = _cls
             func = getattr(obj, func)
             return obj, func, kwargs
 
@@ -116,8 +122,8 @@ class Session(object):
                 # prepare to pickle
                 value = value if isinstance(value, (bool, int, long, float, str, list, dict)) else str(value)
             except Exception as e:
-                warnings.warn('Exception %s was raised.' % str(e))
-                value = str(e)
+                value = e.__class__.__name__ + ': ' + str(e.message.encode('ascii'))
+                warnings.warn('%s was raised.' % value)
             # send to result queue
             result.put(value)
 
@@ -190,7 +196,7 @@ class Server(Flask):
         task_queue.put(task)
         result = result_queue.get()
 
-        if not isinstance(result, (bool, int, long, float, str)):
+        if not isinstance(result, (bool, int, long, float, str, unicode)):
             result = jsonify(result)
 
         return make_response(result, 200)

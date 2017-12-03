@@ -1,19 +1,4 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-END
-Attribute VB_Name = "clsSession"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = False
-Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
-
-'**************************************************************************************************
-'***                                                                                            ***
-'***                                   public members                                           ***
-'***                                                                                            ***
-'**************************************************************************************************
-
+Attribute VB_Name = "session"
 
 '**************************************************************************************************
 '***                                                                                            ***
@@ -49,6 +34,8 @@ End Sub
 
 
 Function call_session_get(Optional ByVal func As String, Optional ByVal p1 As Variant, Optional ByVal p2 As String, Optional ByVal p3 As String, Optional ByVal p4 As String) As Variant
+    Dim path_s As String
+    Dim query_s As String
     
     validate_session
     path_s = url_path(session_id, func)
@@ -116,7 +103,7 @@ Private Sub close_session()
 End Sub
 
 
-' *** url helper ***
+' *** url helpers ***
 
 Private Function url_path(Optional ByVal p1 As String, Optional ByVal p2 As String, Optional ByVal p3 As String, Optional ByVal p4 As String) As String
     url_path = ""
@@ -200,7 +187,7 @@ Private Function send_win(ByVal type_s As String, ByVal url As String, Optional 
 
     ElseIf type_s = "DELETE" Then
         Debug.Print "WinHttpRequest.Open ""DELETE"", " & url & ", False"
-        WinHttpReq.Open "POST", url, False
+        WinHttpReq.Open "DELETE", url, False
     
     Else: Err.Raise vbObjectError + 110, , "Cannot handle HttpRequest " & type_s
 

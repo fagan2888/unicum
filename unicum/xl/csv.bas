@@ -27,38 +27,47 @@ Private Const NV_REPLACEMENT = ""
 '***                                                                                            ***
 '**************************************************************************************************
 
-'redim preserve both dimensions for a 2dimension array *ONLY
-Public Function ReDimPreserve(aArrayToPreserve As Variant, nNewFirstUBound As Variant, nNewLastUBound As Variant, Optional Value As Variant) As Variant
-    Dim nFirst As Long
-    Dim nLast As Long
-    Dim nOldFirstUBound As Long
-    Dim nOldLastUBound As Long
+'redim preserve both dimensions for a nested 2dim array *ONLY
+Public Function Collar4Range(iArray As Variant, oRowDim As Variant, oColDim As Variant, Optional Value As Variant) As Variant
 
-    ReDimPreserve = False
-    'check if its in array first
-    If IsArray(aArrayToPreserve) Then
-        'create new array
-        ReDim aPreservedArray(nNewFirstUBound, nNewLastUBound)
-        'get old lBound/uBound
-        nOldFirstUBound = UBound(aArrayToPreserve, 1)
-        nOldLastUBound = UBound(aArrayToPreserve, 2)
-        'loop through first
-        For nFirst = LBound(aArrayToPreserve, 1) To nNewFirstUBound
-            For nLast = LBound(aArrayToPreserve, 2) To nNewLastUBound
-                'if its in range, then append to new array the same way
-                If nOldFirstUBound >= nFirst And nOldLastUBound >= nLast Then
-                    aPreservedArray(nFirst, nLast) = aArrayToPreserve(nFirst, nLast)
-                Else
-                    aPreservedArray(nFirst, nLast) = Value
-                End If
-            Next
+    ' check if its in array first
+    If Not IsArray(iArray) Then Exit Function
+    
+    ' init new array
+    ReDim outArray(0 To UBound(iArray) - LBound(iArray) + oRowDim)
+    iRowDim = UBound(iArray) - LBound(iArray)
+    
+    ' loop through first
+    For r = LBound(outArray) To UBound(outArray)
+        ReDim oRow(0 To oColDim)
+        
+        If r <= iRowDim Then
+            iRow = iArray(r + LBound(iArray))
+            iColDim = UBound(iRow) - LBound(iRow)
+        End If
+        ' loop through second
+        For c = LBound(oRow) To UBound(oRow)
+            
+            'i f its in range, then append to new array the same way
+            If r <= iRowDim And c <= iColDim Then
+                oRow(c) = iRow(c + LBound(iRow))
+            Else
+                oRow(c) = Value
+            End If
         Next
-        'return the array redimmed
-        If IsArray(aPreservedArray) Then ReDimPreserve = aPreservedArray
-    End If
+        
+        ' set new row
+        outArray(r) = oRow
+    Next
+    
+    'return new array
+    Collar4Range = outArray
 End Function
 
 Function Range2Csv(rng As Variant) As String
+    Dim csvStr As String
+    Dim i As Long
+    Dim inner As Variant
 
     csvStr = CSV_START
     For i = LBound(rng, 1) To UBound(rng, 1)
@@ -100,13 +109,17 @@ End Function
 '***                                                                                            ***
 '**************************************************************************************************
 
-Private Function cast(ByVal inArray As Variant)
+Private Function cast(ByVal inputArray As Variant)
+    Dim outArray() As Variant
+    Dim decimal_sep As String
+    Dim lctr As Integer
+    'Dim Value As Variant
 
-    ReDim outArray(LBound(inArray) To UBound(inArray))
+    ReDim outArray(LBound(inputArray) To UBound(inputArray))
     decimal_sep = Application.International(xlDecimalSeparator)
 
-     For lctr = LBound(inArray) To UBound(inArray)
-        Value = inArray(lctr)
+     For lctr = LBound(inputArray) To UBound(inputArray)
+        Value = inputArray(lctr)
         
         If IsEmpty(Value) Then
             Value = "null"
