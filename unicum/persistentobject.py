@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 #  unicum
-#  ------------
+#  -------------
 #  Simple object cache and __factory.
 #
 #  Author:  pbrisk <pbrisk_at_github@icloud.com>
