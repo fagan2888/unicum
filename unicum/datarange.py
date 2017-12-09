@@ -246,12 +246,12 @@ class DataRange(dict):
         body = [[r] + self.row(r) for r in self.row_keys()]
         return head + body
 
-    def to_serializable(self, level=0):
+    def to_serializable(self, level=0, all_properties_flag=False):
         ret = list()
         for r in self.total_list:
             l = list()
             for v in r:
-                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
+                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
                 v = self._none_alias[0] if isinstance(v, type(None)) else v
                 v = v if isinstance(v, (float, int, type(None))) else str(v)
                 l.append(v)

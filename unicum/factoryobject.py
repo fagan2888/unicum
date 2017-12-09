@@ -18,14 +18,14 @@ class FactoryType(type):
     def __call__(cls, *args, **kwargs):
         name = str(args[0]) if args else cls.__name__
         name = kwargs['name'] if 'name' in kwargs else name
-        instance = cls._get(name)
+        instance = cls.get(name)
         if instance is None:
             instance = cls.__new__(cls, *args, **kwargs)
             instance.__init__(*args, **kwargs)
         return instance
 
     @classmethod
-    def _get(cls, key, default=None):
+    def get(cls, key, default=None):
         return default
 
 
@@ -54,62 +54,55 @@ class FactoryObject(object):
     def __str__(self):
         return str(self.__class__.__name__)
 
-    def to_serializable(self, level=0):
-        return self._name
-
     def register(self, *names):
+        factory = self.__class__._get_factory()
         if not names:
             names = (self._name,)
         for name in names:
-            self.__class__._set(str(name), self)
+            factory[str(name)] = self
         return self
 
     def remove(self):
-        for k in self.__class__._keys(self):
-            self.__class__._del(k)
+        factory = self.__class__._get_factory()
+        for k, v in factory.items():
+            if v == self:
+                factory.pop(k)
         return self
 
-    @classmethod
-    def _set(cls, key, value):
-        f = cls._get_factory()
-        f[key] = value
-
-    @classmethod
-    def _get(cls, key, default=None):
-        f = cls._get_factory()
-        if key is not None and key in f:
-            return f[key]
-        else:
-            return default
-
-    @classmethod
-    def _del(cls, key):
-        f = cls._get_factory()
-        if key is not None and key in f:
-            f.pop(key)
-
-    @classmethod
-    def _keys(cls, value=None):
-        f = cls._get_factory()
-        if value is None:
-            return f.keys()
-        return [k for k, v in f.items() if value == v]
+    def to_serializable(self, level=0, all_properties_flag=False):
+        return self._name
 
     @classmethod
     def from_serializable(cls, item):
         return cls(item)
 
     @classmethod
-    def items(cls):
-        return cls._get_factory().items()
+    def filter(cls, filter_func=None):
+        if filter_func is None:
+            return cls.keys()
+
+        factory = cls._get_factory()
+        return sorted([k for k, v in factory.items() if filter_func(v)])
+
+    @classmethod
+    def get(cls, key, default=None):
+        factory = cls._get_factory()
+        return factory.get(key, default)
 
     @classmethod
     def keys(cls):
-        return cls._keys()
+        factory = cls._get_factory()
+        return factory.keys()
 
     @classmethod
     def values(cls):
-        return cls._get_factory().values()
+        factory = cls._get_factory()
+        return factory.values()
+
+    @classmethod
+    def items(cls):
+        factory = cls._get_factory()
+        return factory.items()
 
 
 class ObjectList(list):
@@ -208,8 +201,8 @@ class ObjectList(list):
             self.__validate(value)
         super(ObjectList, self).extend(iterable)
 
-    def to_serializable(self, level=0):
-        return [x.to_serializable(level + 1) for x in self]
+    def to_serializable(self, level=0, all_properties_flag=False):
+        return [x.to_serializable(level + 1, all_properties_flag) for x in self]
 
     @classmethod
     def from_serializable(cls, item):

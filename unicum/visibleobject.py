@@ -42,13 +42,13 @@ class VisibleObject(FactoryObject, LinkedObject, PersistentObject):
             property_name = self.__class__._to_visible(property_name)
         if property_item_name is None:
             return getattr(self, property_name)
-        raise NotImplementedError
+        raise AttributeError
 
     def to_serializable(self, level=0, all_properties_flag=False):
         if level is 0:
             return PersistentObject.to_serializable(self, all_properties_flag=all_properties_flag)
         else:
-            return FactoryObject.to_serializable(self)
+            return FactoryObject.to_serializable(self, all_properties_flag)
 
     def to_range(self, all_properties_flag=False):
         s = self.to_serializable(0, all_properties_flag)

@@ -46,6 +46,10 @@ Function createObject(ByVal ObjectClass As String, ByVal ObjectName As String)
     createObject = session.call_session_get("create", ObjectClass, ObjectName, True)
 End Function
 
+Function callMethod(ByVal FunctionName As String, ByVal ObjectName As String, Optional ByVal Arg1 As String, Optional ByVal Arg2 As String, Optional ByVal Arg3 As String)
+    callMethod = session.call_session_get(FunctionName, ObjectName, CStr(Arg1), CStr(Arg2), CStr(Arg3))
+End Function
+
 
 Function writeObjectToJson(ByVal ObjectName As String, Optional ByVal AllProperties As Boolean)
     writeObjectToJson = session.call_session_get("save_object_to_string", ObjectName, AllProperties)
@@ -56,7 +60,7 @@ Function writeObjectToRange(ByVal ObjectName As String, Optional ByVal AllProper
     rng_str = session.call_session_get("to_range", ObjectName, AllProperties)
     rng_array = csv.Csv2Range(rng_str)
     collar = helpers.getSetup("Collar") + 1
-    rng_array = csv.Collar4Range(rng_array, collar, collar, "")
+    If collar > 1 Then rng_array = csv.Collar4Range(rng_array, collar, collar, "")
     writeObjectToRange = rng_array
 End Function
 
@@ -82,7 +86,7 @@ Function getObjectCache(Optional ByVal Transpose As Boolean)
 
     rng_str = session.call_session_get("keys", "VisibleObject")
     rng_array = csv.Csv2Range("[" & rng_str & "]")
-    If Transpose = True Then rng_array = Application.Transpose(rng_array)
+    If Transpose = True And IsArray(rng_array) And IsArray(rng_array(0)) Then rng_array = Application.Transpose(rng_array)
     'rng_array = csv.Collar4Range(rng_str, 10, 10, "")
     getObjectCache = rng_array
 End Function

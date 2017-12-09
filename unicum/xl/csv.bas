@@ -37,6 +37,9 @@ Public Function Collar4Range(iArray As Variant, oRowDim As Variant, oColDim As V
     ReDim outArray(0 To UBound(iArray) - LBound(iArray) + oRowDim)
     iRowDim = UBound(iArray) - LBound(iArray)
     
+    iRow = iArray(0)
+    oColDim = UBound(iRow) - LBound(iRow) + oColDim
+        
     ' loop through first
     For r = LBound(outArray) To UBound(outArray)
         ReDim oRow(0 To oColDim)
@@ -86,9 +89,18 @@ End Function
 
 Function Csv2Range(ByVal content As String) As Variant
 
+    If InStr(1, content, CVS_CRLF) = 0 Then
+        Csv2Range = Array(content)
+        Exit Function
+    End If
+
     content = Mid(content, 3, Len(content) - 4)
     lineArray = Split(content, CSV_CRLF, -1, vbTextCompare)
     x = ApplicationFunc
+    If UBound(lineArray) < 0 Then
+        Csv2Range = Array("")
+        Exit Function
+    End If
     ReDim dataArray(LBound(lineArray) To UBound(lineArray))
     
     For i = LBound(lineArray) To UBound(lineArray)
