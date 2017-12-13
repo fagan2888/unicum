@@ -1,5 +1,6 @@
 Attribute VB_Name = "handlers"
 Option Private Module
+
 Private Const CACHE_SHAPE_NAME = "ObjectCache"
 Private cacheSelection As String
 Private cacheOpen As String
@@ -48,17 +49,17 @@ Private Function getObjectName(Optional ByVal ObjectName As String, Optional ByV
     Dim item As Variant
 
     ' else pick object from cache
-    cache = unicum.getObjectCache()(0)
+    'cache = unicum.getObjectCache()(0)
+    cache = core.listObjectCache()(0)
 
-    ' if current selection it is a range, pick first cell
-    If TypeOf Selection Is Excel.Range Then
-        targetValue = Selection.Cells(1, 1).Value
-        If targetValue <> "" And helpers.inArray(targetValue, cache) Then
-            getObjectName = targetValue
-            Exit Function
-        End If
-    End If
-
+'    ' if current selection it is a range, pick first cell
+'    If TypeOf Selection Is Excel.Range Then
+'        targetValue = Selection.Cells(1, 1).Value
+'        If targetValue <> "" And helpers.inArray(targetValue, cache) Then
+'            getObjectName = targetValue
+'            Exit Function
+'        End If
+'    End If
 
     ' find shape by name
     For Each cacheShape In ActiveSheet.Shapes
@@ -155,14 +156,20 @@ End Sub
 ' *** sheet handler ***
 
 Sub loadObjectFromSheet()
+    Dim InputReturn As Variant
     Dim rng As Range
     Dim topLeft As String
     Dim bottomRight As String
     Dim ObjectName As String
 
-    topLeft = helpers.getSetup("TopLeftCell")
-    bottomRight = helpers.getSetup("BottomRightCell")
-    Set rng = ActiveSheet.Range(topLeft & ":" & bottomRight)
+    InputReturn = Application.InputBox("Select range to create object.", "Select range to create object.", Type:=8)
+    If TypeOf InputReturn Is Excel.Range Then
+        Set rng = InputReturn
+    Else
+        topLeft = helpers.getSetup("TopLeftCell")
+        bottomRight = helpers.getSetup("BottomRightCell")
+        Set rng = ActiveSheet.Range(topLeft & ":" & bottomRight)
+    End If
     ObjectName = unicum.createObjectFromRange(rng)
 
     helpers.Logger "Created object " & ObjectName, "INFO"
@@ -215,11 +222,8 @@ Sub writeObjectToSheet(Optional ByVal ObjectName As String)
             Next
         Next
         TopLeftCell.Offset(1, 1).Select
-
-        ' rename sheet by 'ObjectName (#)'
+        
         ' where the name is checked for not allowed characters and shorted if neccessary
-
-
         ActiveSheet.Name = helpers.validSheetName(ObjectName)
 
         ' enable screen updating

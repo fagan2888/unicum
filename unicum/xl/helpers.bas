@@ -1,4 +1,5 @@
 Attribute VB_Name = "helpers"
+Option Private Module
 
 Private Const SETUP_SHEET_NAME = "Setup"
 
@@ -13,6 +14,7 @@ Function getSetup(ByVal Property As String)
         If rng.Cells(i, 1).Value = Property Then Exit For
     Next
     getSetup = rng.Cells(i, 2).Value
+    Debug.Print "getSetup: " & Property & " = " & getSetup
 End Function
 
 Sub setSetup(ByVal Property As String, ByVal Value As Variant)
@@ -20,6 +22,7 @@ Sub setSetup(ByVal Property As String, ByVal Value As Variant)
     For i = 1 To 100
         If rng.Cells(i, 1).Value2 = Property Then Exit For
     Next
+    Debug.Print "setSetup: " & Property & " = " & Value
     rng.Cells(i, 2).Value2 = Value
 End Sub
 
@@ -85,6 +88,8 @@ Function validSheetName(ByVal ProposedName As String)
 
     ProposedName = Left(ProposedName, 25)
 
+    
+    ' rename sheet by 'ProposedName (#)'
     For Each sheet In Sheets
         If InStr(1, sheet.Name, ProposedName) Then cnt = cnt + 1
     Next

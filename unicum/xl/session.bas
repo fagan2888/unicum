@@ -1,4 +1,5 @@
 Attribute VB_Name = "session"
+Option Private Module
 
 '**************************************************************************************************
 '***                                                                                            ***
@@ -23,7 +24,7 @@ Private password As String
 '***                                                                                            ***
 '**************************************************************************************************
 
-Public Sub init_session(ByVal url_s As String, ByVal session_id_s As String, ByVal usr_s As String, ByVal pwd_s As String)
+Public Function init_session(ByVal url_s As String, Optional ByVal session_id_s As String, Optional ByVal usr_s As String, Optional ByVal pwd_s As String) As String
 
     url = url_s
     session_id = session_id_s
@@ -31,59 +32,71 @@ Public Sub init_session(ByVal url_s As String, ByVal session_id_s As String, ByV
     password = pwd_s
 
     If session_id = "" Then open_session
-
-
-    If Not validate_session Then
-        open_session
-        Msg = url & "/" & session_id & " will be a new session."
-        ok = MsgBox(Msg, vbOKOnly, "Opening New Session")
+    If validate_session Then
+        init_session = get_full_path()
+    Else
+        Msg = "Open new session?"
+        ok = MsgBox(Msg, vbOKCancel, "No session found")
+        If ok = 1 Then
+            open_session
+            init_session = get_full_path()
+        Else
+            init_session = "No valid session at " & get_full_path()
+        End If
     End If
 
-End Sub
+End Function
 
 
 Function call_session_get(Optional ByVal func As String, Optional ByVal p1 As Variant, Optional ByVal p2 As String, Optional ByVal p3 As String, Optional ByVal p4 As String) As Variant
     Dim path_s As String
     Dim query_s As String
 
-    validate_session
-
-    path_s = url_path(session_id, func)
-    query_s = url_query(p1, p2, p3, p4)
-    call_session_get = send("GET", url, path_s, query_s)
+    If validate_session Then
+        path_s = url_path(session_id, func)
+        query_s = url_query(p1, p2, p3, p4)
+        call_session_get = send("GET", url, path_s, query_s)
+    End If
 
 End Function
 
 Function call_session_post(Optional ByVal func As String, Optional ByVal content_s As String) As Variant
 
-
-    validate_session
-
-    path_s = url_path(session_id, func)
-    call_session_post = send("POST", url, path_s, content_s)
-
+    If validate_session Then
+        path_s = url_path(session_id, func)
+        call_session_post = send("POST", url, path_s, content_s)
+    End If
+    
 End Function
 
 
 Function call_session_delete(Optional ByVal func As String) As Variant
 
-    validate_session
+    If validate_session Then
+        path_s = url_path(session_id, func)
+        call_session_delete = send("DELETE", url, path_s)
+    End If
+    
+End Function
 
-    path_s = url_path(session_id, func)
-    call_session_delete = send("DELETE", url, path_s)
+
+Function get_session_id() As String
+
+    get_session_id = session_id
 
 End Function
 
 
-Function get_id()
+Function get_full_path() As String
 
-    If validate_session Then
-        get_id = session_id
+    If user = "" Then
+        get_full_path = url & "/" & session_id
     Else
-        get_id = ""
+        get_full_path = user & "@" & url & "/" & session_id
     End If
 
 End Function
+
 
 '**************************************************************************************************
 '***                                                                                            ***
@@ -95,49 +108,48 @@ End Function
 
 Private Sub open_session()
     On Error GoTo Problem
+    
     session_id = send("GET", url)
 
     Exit Sub
+    
 Problem:
     Msg = "Unable to open new session" & _
             vbCrLf & "Error number: " & Err.Number & _
             vbCrLf & "Error Description: " & Err.Description
-    MsgBox (Msg)
+    Debug.Print Msg
 
 End Sub
 
 
 Private Function validate_session()
-
-
     On Error GoTo Problem
 
-    Validation = (Replace(send("GET", url, session_id), VBA.vbLf, "") = "true")
+    validate_session = (Replace(send("GET", url, session_id), VBA.vbLf, "") = "true")
 
-    If Validation = False Then
-        Msg = url & "/" & session_id & " is no valid session."
-        MsgBox (Msg)
-        validate_session = False
+    If validate_session Then
+        Application.StatusBar = "Connected to " & get_full_path()
     Else
-        validate_session = True
+        Application.StatusBar = ""
     End If
-
     Exit Function
+    
 Problem:
     Msg = "A validation of the session was not possible" & _
             vbCrLf & "Error number: " & Err.Number & _
             vbCrLf & "Error Description: " & Err.Description
-    MsgBox (Msg)
+    Debug.Print Msg
 
     validate_session = False
 End Function
 
 Private Sub close_session()
 
-    validate_session
-    path_s = url_path(session_id, func)
-    call_get = send("DELETE", url)
-    Application.StatusBar = ""
+    If validate_session Then
+        path_s = url_path(session_id, func)
+        call_get = send("DELETE", url)
+        Application.StatusBar = ""
+    End If
 
 End Sub
 
@@ -224,8 +236,6 @@ Private Function send_win(ByVal type_s As String, ByVal url As String, Optional 
         Debug.Print "WinHttpRequest.Open ""POST"", " & url & ", False"
 
         WinHttpReq.Open "POST", url, False
-
-
 
     ElseIf type_s = "DELETE" Then
         Debug.Print "WinHttpRequest.Open ""DELETE"", " & url & ", False"

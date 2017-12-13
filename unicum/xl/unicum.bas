@@ -8,17 +8,11 @@ Function startSession(Optional ByVal url As String, Optional ByVal session_id As
     Optional ByVal user As String, Optional ByVal password As String) As String
 
     If url = "" Then url = helpers.getSetup("URL")
-    If session_id = "" Then session_id = helpers.getSetup("SessionId")
-
     If url = "" Then url = LOCALHOST
+    If session_id = "" Then session_id = helpers.getSetup("SessionId")
+    
+    startSession = session.init_session(url, session_id, user, password)
 
-    session.init_session url, session_id, user, password
-
-    If user = "" Then
-        startSession = url
-    Else
-        startSession = user & "@" & url
-    End If
 End Function
 
 

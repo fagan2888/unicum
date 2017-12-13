@@ -1,5 +1,4 @@
 Attribute VB_Name = "devtools"
-
 Option Private Module
 
 Private Const mdlNames = "controls,csv,unicum,handlers,helpers,session"
@@ -95,8 +94,10 @@ Sub exportCode()
         On Error Resume Next
         Err.Clear
         
-        path = directory & Application.PathSeparator & VBComponent.Name & extension
-        Call VBComponent.Export(path)
+        If extension = ".bas" Then
+            path = directory & Application.PathSeparator & VBComponent.Name & extension
+            Call VBComponent.Export(path)
+        End If
         
         If Err.Number <> 0 Then
             Call MsgBox("Failed to export " & VBComponent.Name & " to " & path, vbCritical)
