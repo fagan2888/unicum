@@ -2,11 +2,18 @@ Attribute VB_Name = "unicum"
 ' cell function for unicum.VisibleObject methods
 ' (cfg. http://github.com/pbrisk/unicum)
 
-Function startSession(Optional ByVal url As String, Optional ByVal user As String, Optional ByVal password As String) As String
-    If url = "" Then url = "127.0.0.1"
-    If Not InStr(1, url, "http://") = 1 Then url = "http://" & url
-    If Not InStr(5, url, ":") = 1 Then url = url & ":2699"
-    session.init_session url, user, password
+Private Const LOCALHOST = "http://127.0.0.1:2699"
+
+Function startSession(Optional ByVal url As String, Optional ByVal session_id As String, _
+    Optional ByVal user As String, Optional ByVal password As String) As String
+
+    If url = "" Then url = helpers.getSetup("URL")
+    If session_id = "" Then session_id = helpers.getSetup("SessionId")
+
+    If url = "" Then url = LOCALHOST
+
+    session.init_session url, session_id, user, password
+
     If user = "" Then
         startSession = url
     Else
@@ -20,7 +27,7 @@ Function createObjectFromRange(ByVal rng As Range)
     Dim cnt As Long
     Dim line As Range
     Dim csv_s As String
-    
+
     ReDim outArray(LBound(rng.Rows.Value) To UBound(rng.Rows.Value))
     cnt = LBound(outArray)
     For Each line In rng.Rows
