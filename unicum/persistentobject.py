@@ -108,8 +108,8 @@ class PersistentObject(object):
         # workaround to mimic FactoryType to work well with FactoryObject.
         name = str(args[0]) if args else cls.__name__
         name = kwargs['name'] if 'name' in kwargs else name
-        if hasattr(cls, '_get'):
-            instance = cls._get(name)
+        if hasattr(cls, 'get'):
+            instance = cls.get(name)
             if instance:
                 return instance
 
@@ -144,7 +144,7 @@ class PersistentObject(object):
         for a in [a for a in dir(self) if self.__class__._is_visible(a)]:
             if a in self._modified_members or self._from_visible(a) in ['Name', 'Class', 'Module'] or all_properties_flag:
                 v = getattr(self, a)
-                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
+                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
                 v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
                 d[self.__class__._from_visible(a)] = v
         return d
@@ -251,10 +251,10 @@ class PersistentList(list):
     def from_serializable(cls, item):
         return cls(item)
 
-    def to_serializable(self, level=0):
+    def to_serializable(self, level=0, all_properties_flag=False):
         r = list()
         for v in self:
-            v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
+            v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
             v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
             r.append(v)
         return r
@@ -266,10 +266,10 @@ class PersistentDict(dict):
     def from_serializable(cls, item):
         return cls(item)
 
-    def to_serializable(self, level=0):
+    def to_serializable(self, level=0, all_properties_flag=False):
         r = dict()
         for k, v in self.items():
-            v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
+            v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
             v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
             r[k] = v
         return r
@@ -380,31 +380,37 @@ class AttributeList(list):
             self._validate(value)
         super(AttributeList, self).extend(iterable)
 
-    def to_serializable(self, level=0):
+    def to_serializable(self, level=0, all_properties_flag=False):
         if not self:
             return [['Name', 'Class', 'Module']]
         # list of objects -> list of dicts
-        d = [x.to_serializable() for x in self]
-        keys = sorted(self.keys())
+        d = [x.to_serializable(all_properties_flag=all_properties_flag) for x in self]
+        keys = sorted(self.keys(0, all_properties_flag))
         ret = [keys]
         for o in d:
             l = list()
             for k in keys:
                 v = o.get(k, None)
-                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1)
+                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
                 v = v if isinstance(v, self._value_types) else str(v)
                 # v = v if isinstance(v, (float, int, type(None))) else str(v)
                 l.append(v)
             ret.append(l)
         return ret
 
-    def keys(self):
-        return sorted(set().union(*[x.to_serializable().keys() for x in self]))
+    def keys(self,level=0, all_properties_flag=False):
+        if level:
+            return sorted(set().union(*[x.to_serializable(level, all_properties_flag) for x in self]))
+        else:
+            return sorted(set().union(*[x.to_serializable(level, all_properties_flag).keys() for x in self]))
 
-    def values(self):
-        keys = self.keys()
-        dicts = [x.to_serializable() for x in self]
-        return [[o.get(k) for k in keys] for o in dicts]
+    def values(self, level=0, all_properties_flag=False):
+        keys = self.keys(level, all_properties_flag)
+        if level:
+            return keys
+        else:
+            dicts = [x.to_serializable(level, all_properties_flag) for x in self]
+            return [[o.get(k) for k in keys] for o in dicts]
 
-    def items(self):
-        return zip(self.keys(), self.items())
+    def items(self, level=0, all_properties_flag=False):
+        return zip(self.keys(level, all_properties_flag), self.items(level, all_properties_flag))

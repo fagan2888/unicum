@@ -1,5 +1,5 @@
 Attribute VB_Name = "csv"
-
+Option Private Module
 '**************************************************************************************************
 '***                                                                                            ***
 '***                                   private constants                                        ***
@@ -32,22 +32,25 @@ Public Function Collar4Range(iArray As Variant, oRowDim As Variant, oColDim As V
 
     ' check if its in array first
     If Not IsArray(iArray) Then Exit Function
-    
+
     ' init new array
     ReDim outArray(0 To UBound(iArray) - LBound(iArray) + oRowDim)
     iRowDim = UBound(iArray) - LBound(iArray)
-    
+
+    iRow = iArray(0)
+    oColDim = UBound(iRow) - LBound(iRow) + oColDim
+
     ' loop through first
     For r = LBound(outArray) To UBound(outArray)
         ReDim oRow(0 To oColDim)
-        
+
         If r <= iRowDim Then
             iRow = iArray(r + LBound(iArray))
             iColDim = UBound(iRow) - LBound(iRow)
         End If
         ' loop through second
         For c = LBound(oRow) To UBound(oRow)
-            
+
             'i f its in range, then append to new array the same way
             If r <= iRowDim And c <= iColDim Then
                 oRow(c) = iRow(c + LBound(iRow))
@@ -55,11 +58,11 @@ Public Function Collar4Range(iArray As Variant, oRowDim As Variant, oColDim As V
                 oRow(c) = Value
             End If
         Next
-        
+
         ' set new row
         outArray(r) = oRow
     Next
-    
+
     'return new array
     Collar4Range = outArray
 End Function
@@ -86,20 +89,30 @@ End Function
 
 Function Csv2Range(ByVal content As String) As Variant
 
+    content = Replace(content, VBA.vbLf, "")
+    If InStr(1, content, CVS_CRLF) = 0 Then
+        Csv2Range = Array(content)
+        Exit Function
+    End If
+
     content = Mid(content, 3, Len(content) - 4)
     lineArray = Split(content, CSV_CRLF, -1, vbTextCompare)
     x = ApplicationFunc
+    If UBound(lineArray) < 0 Then
+        Csv2Range = Array("")
+        Exit Function
+    End If
     ReDim dataArray(LBound(lineArray) To UBound(lineArray))
-    
+
     For i = LBound(lineArray) To UBound(lineArray)
         ' TODO: be careful with comma inside of text
         inner = Split(lineArray(i), CSV_SEP, -1, vbTextCompare)
         inner = back(inner)
         dataArray(i) = inner
     Next i
-    
+
     Csv2Range = dataArray
-    
+
 End Function
 
 
@@ -120,7 +133,7 @@ Private Function cast(ByVal inputArray As Variant)
 
      For lctr = LBound(inputArray) To UBound(inputArray)
         Value = inputArray(lctr)
-        
+
         If IsEmpty(Value) Then
             Value = "null"
         ElseIf Value = True Then
@@ -139,7 +152,7 @@ Private Function cast(ByVal inputArray As Variant)
                 Value = Replace(Value, decimal_sep, CSV_DECIMAL)
             End If
         End If
-        
+
         outArray(lctr) = Value
     Next
     cast = outArray
@@ -147,7 +160,7 @@ End Function
 
 Private Function back(ByVal inArray As Variant)
     back = inArray
-    
+
     decimal_sep = Application.International(xlDecimalSeparator)
     ReDim outArray(LBound(inArray) To UBound(inArray))
 
@@ -162,9 +175,9 @@ Private Function back(ByVal inArray As Variant)
         Case "null"
             Value = ""
         Case Else
-        
+
             If Application.IsText(Value) Then
-                
+
                 Select Case Mid$(Value, 1, 1)
                 Case """"
                     Value = Replace(Value, """", "")
@@ -181,12 +194,12 @@ Private Function back(ByVal inArray As Variant)
                     End If
                 End Select
             End If
-            
+
         End Select
 
         outArray(lctr) = Value
     Next
-    
+
     back = outArray
 End Function
 

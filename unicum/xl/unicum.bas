@@ -2,16 +2,17 @@ Attribute VB_Name = "unicum"
 ' cell function for unicum.VisibleObject methods
 ' (cfg. http://github.com/pbrisk/unicum)
 
-Function startSession(Optional ByVal url As String, Optional ByVal user As String, Optional ByVal password As String) As String
-    If url = "" Then url = "127.0.0.1"
-    If Not InStr(1, url, "http://") = 1 Then url = "http://" & url
-    If Not InStr(5, url, ":") = 1 Then url = url & ":2699"
-    session.init_session url, user, password
-    If user = "" Then
-        startSession = url
-    Else
-        startSession = user & "@" & url
-    End If
+Private Const LOCALHOST = "http://127.0.0.1:2699"
+
+Function startSession(Optional ByVal url As String, Optional ByVal session_id As String, _
+    Optional ByVal user As String, Optional ByVal password As String) As String
+
+    If url = "" Then url = helpers.getSetup("URL")
+    If url = "" Then url = LOCALHOST
+    If session_id = "" Then session_id = helpers.getSetup("SessionId")
+    
+    startSession = session.init_session(url, session_id, user, password)
+
 End Function
 
 
@@ -20,7 +21,7 @@ Function createObjectFromRange(ByVal rng As Range)
     Dim cnt As Long
     Dim line As Range
     Dim csv_s As String
-    
+
     ReDim outArray(LBound(rng.Rows.Value) To UBound(rng.Rows.Value))
     cnt = LBound(outArray)
     For Each line In rng.Rows
@@ -46,6 +47,10 @@ Function createObject(ByVal ObjectClass As String, ByVal ObjectName As String)
     createObject = session.call_session_get("create", ObjectClass, ObjectName, True)
 End Function
 
+Function callMethod(ByVal FunctionName As String, ByVal ObjectName As String, Optional ByVal Arg1 As String, Optional ByVal Arg2 As String, Optional ByVal Arg3 As String)
+    callMethod = session.call_session_get(FunctionName, ObjectName, CStr(Arg1), CStr(Arg2), CStr(Arg3))
+End Function
+
 
 Function writeObjectToJson(ByVal ObjectName As String, Optional ByVal AllProperties As Boolean)
     writeObjectToJson = session.call_session_get("save_object_to_string", ObjectName, AllProperties)
@@ -56,7 +61,7 @@ Function writeObjectToRange(ByVal ObjectName As String, Optional ByVal AllProper
     rng_str = session.call_session_get("to_range", ObjectName, AllProperties)
     rng_array = csv.Csv2Range(rng_str)
     collar = helpers.getSetup("Collar") + 1
-    rng_array = csv.Collar4Range(rng_array, collar, collar, "")
+    If collar > 1 Then rng_array = csv.Collar4Range(rng_array, collar, collar, "")
     writeObjectToRange = rng_array
 End Function
 
@@ -82,7 +87,7 @@ Function getObjectCache(Optional ByVal Transpose As Boolean)
 
     rng_str = session.call_session_get("keys", "VisibleObject")
     rng_array = csv.Csv2Range("[" & rng_str & "]")
-    If Transpose = True Then rng_array = Application.Transpose(rng_array)
+    If Transpose = True And IsArray(rng_array) And IsArray(rng_array(0)) Then rng_array = Application.Transpose(rng_array)
     'rng_array = csv.Collar4Range(rng_str, 10, 10, "")
     getObjectCache = rng_array
 End Function
