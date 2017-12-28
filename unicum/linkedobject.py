@@ -13,12 +13,12 @@
 import inspect
 import weakref
 
-class WeakAttrLink(object):
 
+class WeakAttrLink(object):
     __slots__ = ['_attr', '_ref_name', '_ref']
 
     def __init__(self, obj, attr):
-        #self._ref_name =  str(obj)
+        # self._ref_name =  str(obj)
         self._ref = weakref.ref(obj)
         self._attr = attr
 
@@ -53,10 +53,6 @@ class LinkedObject(object):
     """ links from linked_obj to (obj, attribute) with obj.attribute = linked_obj """
     __link = dict()
 
-    @property
-    def _name(self):
-        return str(self)
-
     @classmethod
     def _get_links(cls):
         mro = inspect.getmro(cls)
@@ -67,10 +63,10 @@ class LinkedObject(object):
         raise TypeError
 
     def __repr__(self):
-        return self.__class__.__name__ + '.' + str(self) + '(' + str(id(self)) + ')'
+        return str(self)
 
     def __str__(self):
-        return str(self.__class__.__name__)
+        return self.__class__.__name__
 
     def __setattr__(self, item, value):
         if hasattr(self, item):
@@ -78,9 +74,8 @@ class LinkedObject(object):
             if isinstance(current, LinkedObject):
                 current.remove_link(self, item)
         super(LinkedObject, self).__setattr__(item, value)
-        if isinstance(value, LinkedObject) and value._name:
+        if isinstance(value, LinkedObject) and repr(value):
             value.register_link(self, item)
-
 
     def register_link(self, obj, attr=None):
         """
@@ -88,7 +83,7 @@ class LinkedObject(object):
         :param obj: object to register link to
         :param attr: attribute name to register link to
         """
-        name = self._name
+        name = repr(self)
         if not name:
             return self
         l = self.__class__._get_links()
@@ -103,7 +98,7 @@ class LinkedObject(object):
         """
         removes link from obj.attr
         """
-        name = self._name
+        name = repr(self)
         if not name:
             return self
         l = self.__class__._get_links()
@@ -119,7 +114,7 @@ class LinkedObject(object):
         """
         redirects all links to self (the new linked object)
         """
-        name = self._name
+        name = repr(self)
         if not name:
             return self
         l = self.__class__._get_links()

@@ -107,11 +107,11 @@ class Session(object):
         def _prepickle(item):
             if isinstance(item, dict):
                 keys = _prepickle(item.keys())
-                items = _prepickle(item.items())
-                item = dict(zip(keys, items))
+                values = _prepickle(item.values())
+                item = dict(zip(keys, values))
             elif isinstance(item, list):
                 item = [_prepickle(i) for i in item]
-            elif isinstance(value, (bool, int, long, float, str)):
+            elif isinstance(item, (bool, int, long, float, str)):
                 pass
             else:
                 item = str(item)

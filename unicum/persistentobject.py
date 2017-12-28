@@ -47,10 +47,10 @@ class PersistentObject(object):
         self._version = 0
 
     def __repr__(self):
-        return self.__class__.__name__ + '.' + str(self) + '(' + str(id(self)) + ')'
+        return str(self) + '(' + str(id(self)) + ')'
 
     def __str__(self):
-        return str(self.__class__.__name__)
+        return self.__class__.__name__
 
     @classmethod
     def _is_visible(cls, property_name):
