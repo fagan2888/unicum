@@ -35,10 +35,6 @@ class FactoryObject(object):
 
     __metaclass__ = FactoryType
 
-    @property
-    def _name(self):
-        return str(self)
-
     @classmethod
     def _get_factory(cls):
         mro = inspect.getmro(cls)
@@ -49,15 +45,15 @@ class FactoryObject(object):
         raise TypeError
 
     def __repr__(self):
-        return str(self) + '(' + str(id(self)) + ')'
+        return str(self)
 
     def __str__(self):
-        return str(self.__class__.__name__)
+        return self.__class__.__name__
 
     def register(self, *names):
         factory = self.__class__._get_factory()
         if not names:
-            names = (self._name,)
+            names = (repr(self),)
         for name in names:
             factory[str(name)] = self
         return self
@@ -70,7 +66,7 @@ class FactoryObject(object):
         return self
 
     def to_serializable(self, level=0, all_properties_flag=False):
-        return self._name
+        return repr(self)
 
     @classmethod
     def from_serializable(cls, item):
