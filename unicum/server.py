@@ -111,6 +111,8 @@ class Session(object):
                 item = dict(zip(keys, values))
             elif isinstance(item, list):
                 item = [_prepickle(i) for i in item]
+            elif isinstance(item, tuple):
+                item = (_prepickle(i) for i in item)
             elif isinstance(item, (bool, int, long, float, str)):
                 pass
             else:
