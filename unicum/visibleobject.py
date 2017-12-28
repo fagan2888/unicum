@@ -26,16 +26,11 @@ class VisibleObject(FactoryObject, LinkedObject, PersistentObject):
         name = kwargs['name'] if 'name' in kwargs else name
         self._name_ = name
 
-    @property
-    def _name(self):
-        return self._name_
-
     def __repr__(self):
-        return str(self) + '(' + str(id(self)) + ')'
+        return str(self)
 
     def __str__(self):
-        # return self.__class__.__name__ + '(' + self._name + ')'
-        return str(self._name)
+        return self._name_
 
     def get_property(self, property_name, property_item_name=None):
         if not self.__class__._is_visible(property_name):
