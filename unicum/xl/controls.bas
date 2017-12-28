@@ -44,7 +44,7 @@ End Sub
 
 Sub ClickDark()
     handlers.showShape "Logo"
-    handlers.notImplemented
+    helpers.StartUp
 End Sub
 
 Sub ClickCache()
@@ -55,6 +55,7 @@ End Sub
 Sub DoubleClick(ByVal Target As Range, Cancel As Boolean)
     Dim sel As Variant
     For Each sel In Target
+        On Error Resume Next
         handlers.writeObjectToSheet sel.Value
     Next
 End Sub

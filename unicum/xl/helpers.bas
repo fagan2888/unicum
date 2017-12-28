@@ -53,6 +53,32 @@ Function inArray(ByVal stringToBeFound As String, ByVal arr As Variant) As Boole
   inArray = (UBound(Filter(arr, stringToBeFound)) > -1)
 End Function
 
+Sub StartUp()
+    call_s = helpers.getSetup("StartUp")
+    Msg = "Do you want to start: " & call_s
+    ok = MsgBox(Msg, vbOKCancel)
+    On Error GoTo Problem
+    If ok = 1 Then
+        If InStr(1, Application.OperatingSystem, "Macintosh") <> 1 Then
+            Debug.Print "Shell(" & call_s & ")"
+            PID = Shell(call_s)
+        Else
+            script_s = "do shell script "" " & call_s & " "" "
+            Debug.Print "MacScript(" & script_s & ")"
+            PID = MacScript(script_s)
+        End If
+        Debug.Print PID
+    End If
+    Exit Sub
+
+Problem:
+    Msg = "A Problem occured during attempt to invoke " & _
+            vbCrLf & call_s & _
+            vbCrLf & "Error number: " & Err.Number & _
+            vbCrLf & "Error Description: " & Err.Description
+    Debug.Print Msg
+    MsgBox Msg, vbCritical
+End Sub
 
 Sub Logger(ByVal Msg As String, ByVal Level As String)
     ' single point of logging

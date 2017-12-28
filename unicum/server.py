@@ -104,6 +104,19 @@ class Session(object):
             func = getattr(obj, func)
             return obj, func, kwargs
 
+        def _prepickle(item):
+            if isinstance(item, dict):
+                keys = _prepickle(item.keys())
+                items = _prepickle(item.items())
+                item = dict(zip(keys, items))
+            elif isinstance(item, list):
+                item = [_prepickle(i) for i in item]
+            elif isinstance(value, (bool, int, long, float, str)):
+                pass
+            else:
+                item = str(item)
+            return item
+
         while True:
             # get from task queue
             this_task = task.get()
@@ -120,7 +133,8 @@ class Session(object):
                 getLogger(SERVER_NAME).debug(msg)
                 value = func(**kwargs)
                 # prepare to pickle
-                value = value if isinstance(value, (bool, int, long, float, str, list, dict)) else str(value)
+                # value = value if isinstance(value, (bool, int, long, float, str, list, dict)) else str(value)
+                value = _prepickle(value)
             except Exception as e:
                 value = e.__class__.__name__ + ': ' + str(e.message.encode('ascii'))
                 warnings.warn('%s was raised.' % value)

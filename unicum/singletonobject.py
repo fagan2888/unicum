@@ -22,7 +22,7 @@ class SingletonObject(object):
         return getattr(cls, self)
 
     def __repr__(self):
-        return str(self) + '(' + str(id(self)) + ')'
+        return str(self)
 
     def __str__(self):
         return self.__class__.__name__

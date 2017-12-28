@@ -86,8 +86,11 @@ Function getObjectCache(Optional ByVal Transpose As Boolean)
     Dim rng_array() As Variant
 
     rng_str = session.call_session_get("keys", "VisibleObject")
-    rng_array = csv.Csv2Range("[" & rng_str & "]")
+    rng_str = "[" & rng_str & "]"
+    If rng_str = "[]" Then rng_str = "[[]]"
+    rng_array = csv.Csv2Range(rng_str)
     If Transpose = True And IsArray(rng_array) And IsArray(rng_array(0)) Then rng_array = Application.Transpose(rng_array)
     'rng_array = csv.Collar4Range(rng_str, 10, 10, "")
     getObjectCache = rng_array
 End Function
+

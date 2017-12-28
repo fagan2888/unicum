@@ -183,13 +183,15 @@ Sub writeObjectToSheet(Optional ByVal ObjectName As String)
     Dim OnProperObjectContinue As Boolean
     OnProperObjectContinue = False
 
-    For Each objName In unicum.getObjectCache()(0)
-        If objName = ObjectName Then
-            OnProperObjectContinue = True
-            Exit For
-        End If
-    Next objName
-
+    cache = unicum.getObjectCache()(0)
+    If Not IsEmpty(cache) Then
+        For Each objName In cache
+            If objName = ObjectName Then
+                OnProperObjectContinue = True
+                Exit For
+            End If
+        Next objName
+    End If
 
     If Not OnProperObjectContinue Then
         Exit Sub
@@ -222,7 +224,8 @@ Sub writeObjectToSheet(Optional ByVal ObjectName As String)
             Next
         Next
         TopLeftCell.Offset(1, 1).Select
-        
+
+        ' rename sheet by 'ObjectName (#)'
         ' where the name is checked for not allowed characters and shorted if neccessary
         ActiveSheet.Name = helpers.validSheetName(ObjectName)
 
@@ -230,3 +233,5 @@ Sub writeObjectToSheet(Optional ByVal ObjectName As String)
         Application.ScreenUpdating = True
     End If
 End Sub
+
+

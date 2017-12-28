@@ -66,7 +66,7 @@ Function call_session_post(Optional ByVal func As String, Optional ByVal content
         path_s = url_path(session_id, func)
         call_session_post = send("POST", url, path_s, content_s)
     End If
-    
+
 End Function
 
 
@@ -76,7 +76,7 @@ Function call_session_delete(Optional ByVal func As String) As Variant
         path_s = url_path(session_id, func)
         call_session_delete = send("DELETE", url, path_s)
     End If
-    
+
 End Function
 
 
@@ -108,11 +108,11 @@ End Function
 
 Private Sub open_session()
     On Error GoTo Problem
-    
+
     session_id = send("GET", url)
 
     Exit Sub
-    
+
 Problem:
     Msg = "Unable to open new session" & _
             vbCrLf & "Error number: " & Err.Number & _
@@ -122,18 +122,15 @@ Problem:
 End Sub
 
 
+
 Private Function validate_session()
+
     On Error GoTo Problem
 
     validate_session = (Replace(send("GET", url, session_id), VBA.vbLf, "") = "true")
 
-    If validate_session Then
-        Application.StatusBar = "Connected to " & get_full_path()
-    Else
-        Application.StatusBar = ""
-    End If
     Exit Function
-    
+
 Problem:
     Msg = "A validation of the session was not possible" & _
             vbCrLf & "Error number: " & Err.Number & _
@@ -223,7 +220,6 @@ End Function
 Private Function send_win(ByVal type_s As String, ByVal url As String, Optional ByVal path_s As String, Optional ByVal query_s As String) As Variant
 
     Dim WinHttpReq As New WinHttpRequest
-    Dim postBytes() As Byte
 
     If path_s <> "" Then url = url & "/" & path_s
 
@@ -234,7 +230,6 @@ Private Function send_win(ByVal type_s As String, ByVal url As String, Optional 
 
     ElseIf type_s = "POST" Then
         Debug.Print "WinHttpRequest.Open ""POST"", " & url & ", False"
-
         WinHttpReq.Open "POST", url, False
 
     ElseIf type_s = "DELETE" Then

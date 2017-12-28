@@ -90,6 +90,7 @@ End Function
 Function Csv2Range(ByVal content As String) As Variant
 
     content = Replace(content, VBA.vbLf, "")
+
     If InStr(1, content, CVS_CRLF) = 0 Then
         Csv2Range = Array(content)
         Exit Function
