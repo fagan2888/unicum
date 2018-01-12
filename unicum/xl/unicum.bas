@@ -4,16 +4,16 @@ Attribute VB_Name = "unicum"
 
 Private Const LOCALHOST = "http://127.0.0.1:2699"
 
-Function startSession(Optional ByVal url As String, Optional ByVal session_id As String, _
-    Optional ByVal user As String, Optional ByVal password As String) As String
+Sub startSession(Optional ByVal url As String, Optional ByVal session_id As String, _
+    Optional ByVal user As String, Optional ByVal password As String)
 
     If url = "" Then url = helpers.getSetup("URL")
     If url = "" Then url = LOCALHOST
     If session_id = "" Then session_id = helpers.getSetup("SessionId")
     
-    startSession = session.init_session(url, session_id, user, password)
+    session.init_session url, session_id, user, password
 
-End Function
+End Sub
 
 
 Function createObjectFromRange(ByVal rng As Range)
@@ -44,7 +44,7 @@ End Function
 
 
 Function createObject(ByVal ObjectClass As String, ByVal ObjectName As String)
-    createObject = session.call_session_get("create", ObjectClass, ObjectName, True)
+    createObject = session.call_session_get("create", ObjectClass, ObjectName, "True")
 End Function
 
 Function callMethod(ByVal FunctionName As String, ByVal ObjectName As String, Optional ByVal Arg1 As String, Optional ByVal Arg2 As String, Optional ByVal Arg3 As String)
