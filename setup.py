@@ -27,7 +27,6 @@ setup(
     bugtrack_url='https://github.com/pbrisk/unicum/issues',
     license='Apache License 2.0',
     packages=['unicum'],
-    package_data={'unicum': ['xl/workbook.xltm']},
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
     platforms='any',
     classifiers=[
