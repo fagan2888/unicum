@@ -80,9 +80,13 @@ Function call_session_delete(Optional ByVal func As String) As Variant
 End Function
 
 
-Function get_session_id() As String
-
-    get_session_id = session_id
+Function get_valid_session_id() As String
+    
+    If validate_session Then
+        get_valid_session_id = session_id
+    Else
+        get_valid_session_id = "invalid"
+    End If
 
 End Function
 

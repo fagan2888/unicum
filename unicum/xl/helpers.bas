@@ -1,6 +1,11 @@
 Attribute VB_Name = "helpers"
 Option Private Module
 
+Public TimerStarted As Boolean
+
+Private RunWhen As Double
+Private Const cUpdateIntervall = 60
+
 Private Const SETUP_SHEET_NAME = "Setup"
 
 Function getUserName()
@@ -53,22 +58,50 @@ Function inArray(ByVal stringToBeFound As String, ByVal arr As Variant) As Boole
   inArray = (UBound(Filter(arr, stringToBeFound)) > -1)
 End Function
 
-Sub StartUp()
-    call_s = helpers.getSetup("StartUp")
-    Msg = "Do you want to start: " & call_s
-    ok = MsgBox(Msg, vbOKCancel)
-    On Error GoTo Problem
-    If ok = 1 Then
-        If InStr(1, Application.OperatingSystem, "Macintosh") <> 1 Then
-            Debug.Print "Shell(" & call_s & ")"
-            PID = Shell(call_s)
-        Else
-            script_s = "do shell script "" " & call_s & " "" "
-            Debug.Print "MacScript(" & script_s & ")"
-            PID = MacScript(script_s)
-        End If
-        Debug.Print PID
+Sub StartUpdateTimer()
+    TimerStarted = True
+    RunWhen = Now + TimeSerial(0, 0, cUpdateIntervall)
+    Application.OnTime EarliestTime:=RunWhen, Procedure:="WriteSessionId", Schedule:=True
+End Sub
+
+Sub StopUpdateTimer()
+    TimerStarted = False
+    Application.OnTime EarliestTime:=RunWhen, Procedure:="WriteSessionId", Schedule:=False
+End Sub
+
+Sub WriteSessionId()
+    session_id = session.get_valid_session_id()
+    
+    If session_id = "invalid" Then
+        Application.StatusBar = ""
+    Else
+        helpers.setSetup "SessionId", session_id
+        Application.StatusBar = "Connected to " & session.get_full_path()
+        StartUpdateTimer
     End If
+End Sub
+
+Sub StartUp()
+
+unicum.startSession
+WriteSessionId
+
+
+'    call_s = helpers.getSetup("StartUp")
+'    Msg = "Do you want to start: " & call_s
+'    ok = MsgBox(Msg, vbOKCancel)
+'    On Error GoTo Problem
+'    If ok = 1 Then
+'        If InStr(1, Application.OperatingSystem, "Macintosh") <> 1 Then
+'            Debug.Print "Shell(" & call_s & ")"
+'            PID = Shell(call_s)
+'        Else
+'            script_s = "do shell script "" " & call_s & " "" "
+'            Debug.Print "MacScript(" & script_s & ")"
+'            PID = MacScript(script_s)
+'        End If
+'        Debug.Print PID
+'    End If
     Exit Sub
 
 Problem:
