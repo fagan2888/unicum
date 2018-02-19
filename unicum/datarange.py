@@ -92,20 +92,24 @@ class DataRange(dict):
         if not isinstance(value, self._value_types):
             s = ', '.join([str(t) for t in self._value_types])
             t = type(value)
-            raise TypeError, \
-                'All properties of item in this AttributeList must have type ' \
-                'of either one of %s but not %s.' % (s, t)
+
+            msg = 'All properties of item in this AttributeList must have type ' \
+                  'of either one of %s but not %s.' % (s, t)
+            raise TypeError(msg)
+
         return True
 
-    def _validate_key(self, key):
+    def _validate_key_format(self, key):
         if not isinstance(key, (list, tuple)) or not len(key) == 2:
-            raise KeyError('Key of %s must be (row_key, col_key) tuple.' % self.__class__.__name__)
+            raise KeyError('Key of %s must be (row_key, col_key) tuple.' % self.__name__)
 
+    def _validate_key_existence(self, key):
+        self._validate_key_format(key)
         r, c = key
         if r not in self._row_keys or c not in self._col_keys:
             s = self.__class__.__name__, str(self._row_keys), str(self._col_keys)
-            raise KeyError('Key of %s must be (row_key, col_key) tuple with \n '
-                           'row_key in %s \n and col_key in %s' % s)
+            msg = 'Key of %s must be (row_key, col_key) tuple with \n row_key in %s \n and col_key in %s' % s
+            raise KeyError(msg)
         return True
 
     def __repr__(self):
@@ -123,7 +127,7 @@ class DataRange(dict):
 
     def __contains__(self, key):
         try:
-            self._validate_key(key)
+            self._validate_key_existence(key)
         except KeyError:
             return False
         return True
@@ -135,7 +139,11 @@ class DataRange(dict):
         return self.__class__(self.to_serializable())
 
     def __setitem__(self, key, value):
-        self._validate_key(key)
+        self._validate_key_format(key)
+        if not key[0] in self.row_keys():
+            self._row_keys.append(key[0])
+        if not key[1] in self.col_keys():
+            self._col_keys.append(key[1])
         self._validate_value(value)
         super(DataRange, self).__setitem__(key, value)
 
@@ -150,16 +158,10 @@ class DataRange(dict):
         # elif key in self._col_keys:
         #     return self.col(key)
 
-        if not isinstance(key, (list, tuple)) or not len(key) == 2:
-            raise KeyError('Key of %s must be row key, col_key or (row key, col key) tuple.' % self.__class__.__name__)
+        self._validate_key_format(key)
 
         r, c = key
-        # try to pic key if int given
-        r = self._row_keys[r] if type(r) is int else r
-        c = self._col_keys[c] if type(c) is int else c
-        if r not in self._row_keys or c not in self._col_keys:
-            s = self.__class__.__name__, str(self._row_keys), str(self._col_keys)
-            raise KeyError('Key of %s must be (row_key, col_key) tuple with \n row_key in %s \n and col_key in %s' % s)
+        self._validate_key_existence((r, c))
 
         return super(DataRange, self).get((r, c), None)
 
@@ -184,7 +186,7 @@ class DataRange(dict):
         col_keys = self._col_keys[ci:cj]
         ret = list()
         for r in row_keys:
-            row = [self[r,c] for c in col_keys]
+            row = [self[r, c] for c in col_keys]
             ret.append(row)
         return ret
 
@@ -197,42 +199,57 @@ class DataRange(dict):
     def _col_index(self, key):
         return self._col_keys.index(key) if self._col_keys.count(key) else key
 
-    def row_append(self, key, value):
-        """ append new row """
-        if key in self._row_keys:
-            raise KeyError('Key %s already exists in row keys.' % key)
-        if not isinstance(value, (tuple, list)):
-            value = [value] * len(self._col_keys)
-        if not len(value) == len(self._col_keys):
+    def row_append(self, row_key, value_list):
+        """
+        append a new row to a DataRange
+
+        :param row_key: a string
+        :param value_list: a list
+        """
+        if row_key in self._row_keys:
+            raise KeyError('Key %s already exists in row keys.' % row_key)
+        if not len(value_list) == len(self._col_keys):
             raise ValueError('Length of data to set does not meet expected row length of %i' % len(self._col_keys))
-        self._row_keys.append(key)
-        for c, v in zip(self._col_keys, value):
-            self[key, c] = v
+        self._row_keys.append(row_key)
+        for c, v in zip(self._col_keys, value_list):
+            self[row_key, c] = v
 
-    def col_append(self, key, value):
-        if key in self._col_keys:
-            raise KeyError('Key %s already exists col keys.' % key)
-        if not isinstance(value, (tuple, list)):
-            value = [value] * len(self._row_keys)
-        if not len(value) == len(self._row_keys):
+    def col_append(self, col_key, value_list):
+        """
+        append a new row to a DataRange
+
+        :param row_key: a string
+        :param value_list: a list
+        """
+        if col_key in self._col_keys:
+            raise KeyError('Key %s already exists col keys.' % col_key)
+        if not isinstance(value_list, (tuple, list)):
+            value_list = [value_list] * len(self._row_keys)
+        if not len(value_list) == len(self._row_keys):
             raise ValueError('Length of data to set does not meet expected col length of %i' % len(self._row_keys))
-        self._col_keys.append(key)
-        for r, v in zip(self._row_keys, value):
-            self[r, key] = v
+        self._col_keys.append(col_key)
+        for r, v in zip(self._row_keys, value_list):
+            self[r, col_key] = v
 
+    #@property
     def row_keys(self):
-        return self._row_keys
+        row_keys = sorted(list(set([row_key for row_key, col_key in self.keys()
+                                    if row_key not in self._row_keys])))
+        return self._row_keys + row_keys
 
+    #@property
     def col_keys(self):
-        return self._col_keys
+        col_keys = sorted(list(set([col_key for row_key, col_key in self.keys()
+                                    if col_key not in self._col_keys])))
+        return self._col_keys + col_keys
 
     def row(self, item):
-        r = self._row_keys[item] if type(item) == int else item
-        return [self.get((r, c)) for c in self._col_keys]
+        r = self.row_keys()[item] if type(item) == int else item
+        return [self.get((r, c)) for c in self.col_keys()]
 
     def col(self, item):
-        c = self._col_keys[item] if type(item) == int else item
-        return [self.get((r, c)) for r in self._row_keys]
+        c = self.col_keys()[item] if type(item) == int else item
+        return [self.get((r, c)) for r in self.row_keys()]
 
     @property
     def item_list(self):
@@ -264,9 +281,13 @@ class DataRange(dict):
     def append(self, key, value):
         self.row_append(key, value)
 
-    def extend(self, key, value):
-        for k,v in zip(key, value):
-            self.row_append(k, v)
+    def extend(self, other):
+        assert isinstance(other, self.__class__)
+        for key, value in other.items():
+            assert key not in self
+            self[key] = value
+
+        return self
 
     def insert(self, item, key, value=None):
         raise NotImplementedError
@@ -274,4 +295,3 @@ class DataRange(dict):
     def __reduce__(self):
 
         return self.__class__, (self.total_list, self._value_types, self._none_alias)
-
