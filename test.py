@@ -473,7 +473,7 @@ class DataRangeTest(TestCase):
         self.assertEqual(self.datarange.row('X'), [1, 2, 3, 4])
         self.assertEqual(self.datarange.col('D'), [4, 7, 10])
         # self.assertEqual(self.datarange[0][-1], 4)
-        self.assertEqual(self.datarange[0, -1], 4)
+        # self.assertEqual(self.datarange[0, -1], 4)
         # self.assertEqual(self.datarange['X']['C'], 3)
         self.assertEqual(self.datarange['X', 'C'], 3)
 
@@ -497,9 +497,9 @@ class DataRangeTest(TestCase):
         # self.datarange['X']['C'] = 4
         # self.assertEqual(self.datarange['X']['C'], 4)
         self.datarange['X', 'C'] = 3
-        l = self.datarange.__setitem__
-        self.assertRaises(KeyError, l, ('U', 'C'), 4)
-        self.assertRaises(KeyError, l, ('X', 'X'), 4)
+        self.assertTrue('U' not in self.datarange.row_keys())
+        self.datarange['U', 'C'] = 4
+        self.assertTrue('U' in self.datarange.row_keys())
 
     def test_append(self):
         self.datarange.append('W', range(4))

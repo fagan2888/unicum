@@ -20,14 +20,13 @@ except ImportError:
 setup(
     name='unicum',
     description='Python library for simple object cache and factory.',
-    version='0.1',
+    version='0.2',
     author='Deutsche Postbank AG [pbrisk]',
     author_email='pbrisk_at_github@icloud.com',
     url='https://github.com/pbrisk/unicum',
     bugtrack_url='https://github.com/pbrisk/unicum/issues',
     license='Apache License 2.0',
     packages=['unicum'],
-    package_data={'unicum': ['xl/workbook.xlsm']},
     long_description=codecs.open('README.rst', encoding='utf-8').read(),
     platforms='any',
     classifiers=[
