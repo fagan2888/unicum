@@ -9,8 +9,10 @@
 #  Website: https://github.com/pbrisk/unicum
 #  License: APACHE Version 2 License (see LICENSE file)
 
+LEFT_TOP = None
 
-class DataRange(dict):
+
+class DataRange(object):
     def __init__(self, iterable=None, value_types=(float, int, str, type(None)), none_alias=(None, ' ', '', 'None'),
                  **kwargs):
         self._value_types = value_types
@@ -57,7 +59,8 @@ class DataRange(dict):
             for col_key, value in zip(col_keys, row_values):
                 iterable.append(((row_key, col_key), value))
 
-        super(DataRange, self).__init__(iterable, **kwargs)
+        # super(DataRange, self).__init__(iterable, **kwargs)
+        self._dict = dict(iterable, **kwargs)
 
     @staticmethod
     def __dict_to_nested_list(iterable):
@@ -101,7 +104,8 @@ class DataRange(dict):
 
     def _validate_key_format(self, key):
         if not isinstance(key, (list, tuple)) or not len(key) == 2:
-            raise KeyError('Key of %s must be (row_key, col_key) tuple.' % self.__name__)
+            s = self.__class__.__name__, key.__class__.__name__
+            raise KeyError('Key of %s must be (row_key, col_key) tuple not %s.' % s)
 
     def _validate_key_existence(self, key):
         self._validate_key_format(key)
@@ -145,7 +149,8 @@ class DataRange(dict):
         if not key[1] in self.col_keys():
             self._col_keys.append(key[1])
         self._validate_value(value)
-        super(DataRange, self).__setitem__(key, value)
+        # super(DataRange, self).__setitem__(key, value)
+        self._dict[key] = value
 
     def __getitem__(self, key):
         # redirect slice
@@ -163,7 +168,8 @@ class DataRange(dict):
         r, c = key
         self._validate_key_existence((r, c))
 
-        return super(DataRange, self).get((r, c), None)
+        # return super(DataRange, self).get((r, c), None)
+        return self._dict.get(key, None)
 
     def __delitem__(self, key):
         raise NotImplementedError
@@ -192,6 +198,27 @@ class DataRange(dict):
 
     def __delslice__(self, i, j):
         raise NotImplementedError
+
+    def update(self, other):
+        return self._dict.update(other)
+
+    def keys(self):
+        return self._dict.keys()
+
+    def values(self):
+        return self._dict.values()
+
+    def items(self):
+        return self._dict.items()
+
+    def get(self, key, default=None):
+        return self._dict.get(key, default)
+
+    def pop(self, key, default=None):
+        return self._dict.pop(key, default)
+
+    def popitem(self):
+        return self._dict.popitem()
 
     def _row_index(self, key):
         return self._row_keys.index(key) if self._row_keys.count(key) else key
@@ -231,25 +258,25 @@ class DataRange(dict):
         for r, v in zip(self._row_keys, value_list):
             self[r, col_key] = v
 
-    #@property
+    # @property
     def row_keys(self):
         row_keys = sorted(list(set([row_key for row_key, col_key in self.keys()
                                     if row_key not in self._row_keys])))
         return self._row_keys + row_keys
 
-    #@property
+    # @property
     def col_keys(self):
         col_keys = sorted(list(set([col_key for row_key, col_key in self.keys()
                                     if col_key not in self._col_keys])))
         return self._col_keys + col_keys
 
     def row(self, item):
-        r = self.row_keys()[item] if type(item) == int else item
-        return [self.get((r, c)) for c in self.col_keys()]
+        # r = self.row_keys()[item] if type(item) == int else item
+        return [self.get((item, c)) for c in self.col_keys()]
 
     def col(self, item):
-        c = self.col_keys()[item] if type(item) == int else item
-        return [self.get((r, c)) for r in self.row_keys()]
+        # c = self.col_keys()[item] if type(item) == int else item
+        return [self.get((r, item)) for r in self.row_keys()]
 
     @property
     def item_list(self):
@@ -259,18 +286,20 @@ class DataRange(dict):
     def total_list(self):
         if not self:
             return [[]]
-        head = [[None] + self.col_keys()]
-        body = [[r] + self.row(r) for r in self.row_keys()]
+        row_keys = self.row_keys()
+        head = [[LEFT_TOP] + self.col_keys()]
+        body = [[r] + self.row(r) for r in row_keys]
         return head + body
 
-    def to_serializable(self, level=0, all_properties_flag=False):
+    def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         ret = list()
         for r in self.total_list:
             l = list()
             for v in r:
-                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
+                if recursive:
+                    v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
+                    v = v if isinstance(v, (float, int, type(None))) else str(v)
                 v = self._none_alias[0] if isinstance(v, type(None)) else v
-                v = v if isinstance(v, (float, int, type(None))) else str(v)
                 l.append(v)
             ret.append(l)
         return ret
@@ -295,3 +324,4 @@ class DataRange(dict):
     def __reduce__(self):
 
         return self.__class__, (self.total_list, self._value_types, self._none_alias)
+

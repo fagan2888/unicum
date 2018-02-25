@@ -11,16 +11,15 @@
 
 
 from datetime import datetime
-from json import dumps
+from json import dumps, loads, JSONEncoder
 from copy import copy, deepcopy
 from unittest import TestCase, TestLoader, TextTestRunner
 from os import getcwd
 from unicum import SingletonObject
 from unicum import FactoryObject, ObjectList, LinkedObject
-from unicum import PersistentObject, PersistentList, PersistentDict, AttributeList, JSONWriter
+from unicum import PersistentObject, PersistentList, PersistentDict, AttributeList, UnicumJSONEncoder
 from unicum import VisibleObject, VisibleAttributeList
-from unicum.datarange import DataRange
-
+from unicum import DataRange
 
 _property_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
 
@@ -349,7 +348,7 @@ class PersistentTest(TestCase):
         j = dumps(e, indent=2, sort_keys=True)
         o = PersistentObject.from_json(j)
         self.assertTrue(type(o) is YourPO)
-        oj = o.to_json(indent=2, property_order=_property_order, dumps=JSONWriter.dumps)
+        oj = o.to_json(indent=2, property_order=_property_order)
         self.assertEqual(oj, j)
         self.assertEqual(o.to_serializable(), PersistentObject.from_serializable(e).to_serializable())
 
@@ -442,17 +441,17 @@ class PersistentTest(TestCase):
             if hasattr(i, 'to_serializable'):
                 i = i.to_serializable(1)
             self.assertEqual(i, j)
-        # todo: add tests interacting with PersistenObject
+            # todo: add tests interacting with PersistenObject
 
     def test_persistentdict(self):
-        l = PersistentDict({'A':1, 'B': MyPO(), 'C': 'ABC'})
+        l = PersistentDict({'A': 1, 'B': MyPO(), 'C': 'ABC'})
         s = l.to_serializable()
         self.assertNotEqual(l, s)
         for i, j in zip(l, s):
             if hasattr(i, 'to_serializable'):
                 i = i.to_serializable(1)
             self.assertEqual(i, j)
-        # todo: add tests interacting with PersistenObject
+            # todo: add tests interacting with PersistenObject
 
 
 class DataRangeTest(TestCase):
@@ -507,17 +506,13 @@ class DataRangeTest(TestCase):
         self.assertRaises(KeyError, l)
         self.assertEqual(len(self.datarange), 4)
         self.assertEqual(self.datarange.row_keys()[-1], 'W')
-        self.assertEqual(self.datarange.row(-1), range(4))
+        self.assertEqual(self.datarange.row('W'), range(4))
 
         self.datarange.row_append('U', range(2, 6))
         self.assertEqual(self.datarange.row('U'), range(2, 6))
-        self.assertEqual(self.datarange.row(4), range(2, 6))
-        self.assertEqual(self.datarange.row(-1), range(2, 6))
 
         self.datarange.col_append('T', range(5))
         self.assertEqual(self.datarange.col('T'), range(5))
-        self.assertEqual(self.datarange.col(4), range(5))
-        self.assertEqual(self.datarange.col(-1), range(5))
 
     def test_copy(self):
         self.assertEqual(self.datarange, copy(self.datarange))
@@ -526,7 +521,7 @@ class DataRangeTest(TestCase):
         self.assertEqual(type(self.datarange), type(deepcopy(self.datarange)))
 
     def test_transpose(self):
-        self.assertEqual(type(list(self.datarange)), list)
+        # self.assertEqual(type(list(self.datarange)), list)
         l = [self.datarange.row(r) for r in self.datarange.row_keys()]
         self.assertEqual(self.datarange.item_list, l)
         self.assertEqual(type(self.datarange), type(self.datarange.transpose()))
@@ -547,6 +542,15 @@ class DataRangeTest(TestCase):
             p = pickle.dumps(self.datarange)
             d = pickle.loads(p)
             self.assertEqual(self.datarange, d)
+
+    def test_json(self):
+        for i in [None, 0, 1, 2]:
+            unicum_json = dumps(self.datarange, cls=UnicumJSONEncoder, indent=i)
+            standard_json = dumps(self.datarange.to_serializable(), indent=i)
+            unicum_json_2 = dumps(DataRange(loads(standard_json)), cls=UnicumJSONEncoder, indent=i)
+            standard_json_2 = dumps(DataRange(loads(unicum_json)).to_serializable(), indent=i)
+            self.assertEqual(unicum_json_2, unicum_json_2)
+            self.assertEqual(standard_json, standard_json_2)
 
 
 class MyVO(VisibleObject):
@@ -686,6 +690,28 @@ class VisibleTest(TestCase):
         VisibleObject('ME').register()
         o = VisibleObject._from_class('VisibleObject', 'unicum', 'ME')
         self.assertEqual(o, VisibleObject('ME'))
+
+    def test_json(self):
+        objs = [1, 2, 3], [1e-1, 1e-1, 1e1, 1e3], 0.12345, 99, 'abc', None, long(12345), {'A':3, 3:4, 'a':'B'}
+        for i in [None, 0, 1, 2]:
+            for o in objs:
+                self.assertEqual(UnicumJSONEncoder(indent=i).encode(o), JSONEncoder(indent=i).encode(o))
+                self.assertEqual(UnicumJSONEncoder(indent=i).encode(o), JSONEncoder(indent=i).encode(o))
+
+        rng = DataRange([[' ', 'X'], [1, 2], [0, 1e10]])
+        obj = MyVO().modify_object('DataRangeProp', rng)
+        unicum_json = dumps(obj, cls=UnicumJSONEncoder, indent=2, key_order=("Module", "Name", "Class",))
+        self.assertTrue(unicum_json.find("Module") < unicum_json.find("Name"))
+        self.assertTrue(unicum_json.find("Name") < unicum_json.find("Class"))
+        self.assertEqual(len(unicum_json.split("\n")), 2+len(obj.to_serializable())+len(rng)+2)
+
+        for i in [None, 0, 1, 2]:
+            unicum_json = dumps(obj, cls=UnicumJSONEncoder, indent=i)
+            standard_json = dumps(obj.to_serializable(), indent=i)
+            unicum_json_2 = dumps(MyVO.from_json(standard_json), cls=UnicumJSONEncoder, indent=i)
+            standard_json_2 = dumps(MyVO.from_json(unicum_json).to_serializable(), indent=i)
+            self.assertEqual(unicum_json_2, unicum_json_2)
+            self.assertEqual(standard_json, standard_json_2)
 
 
 if __name__ == '__main__':

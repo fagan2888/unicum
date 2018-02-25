@@ -12,14 +12,15 @@
 
 from factoryobject import FactoryObject, ObjectList
 from linkedobject import LinkedObject
-from persistentobject import PersistentObject, AttributeList
+from persistentobject import PersistentObject, AttributeList, _order
 from datarange import DataRange
 from ranger import dict_from_range, range_from_dict
 
-_order = 'Name', 'Class', 'Module'
-
 
 class VisibleObject(FactoryObject, LinkedObject, PersistentObject):
+    __factory = dict()
+    __link = dict()
+
     def __init__(self, *args, **kwargs):
         super(VisibleObject, self).__init__(*args, **kwargs)
         name = str(args[0]) if args else self.__class__.__name__
@@ -39,11 +40,11 @@ class VisibleObject(FactoryObject, LinkedObject, PersistentObject):
             return getattr(self, property_name)
         raise AttributeError
 
-    def to_serializable(self, level=0, all_properties_flag=False):
+    def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         if level is 0:
-            return PersistentObject.to_serializable(self, all_properties_flag=all_properties_flag)
+            return PersistentObject.to_serializable(self, all_properties_flag=all_properties_flag, recursive=recursive)
         else:
-            return FactoryObject.to_serializable(self, all_properties_flag)
+            return FactoryObject.to_serializable(self, all_properties_flag, recursive=recursive)
 
     def to_range(self, all_properties_flag=False):
         s = self.to_serializable(0, all_properties_flag)
