@@ -65,7 +65,7 @@ class FactoryObject(object):
                 factory.pop(k)
         return self
 
-    def to_serializable(self, level=0, all_properties_flag=False):
+    def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         return repr(self)
 
     @classmethod
@@ -197,8 +197,11 @@ class ObjectList(list):
             self.__validate(value)
         super(ObjectList, self).extend(iterable)
 
-    def to_serializable(self, level=0, all_properties_flag=False):
-        return [x.to_serializable(level + 1, all_properties_flag) for x in self]
+    def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
+        if recursive:
+            return [x.to_serializable(level + 1, all_properties_flag) for x in self]
+        else:
+            return list(self)
 
     @classmethod
     def from_serializable(cls, item):

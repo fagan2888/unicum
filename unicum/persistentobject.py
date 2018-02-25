@@ -13,9 +13,11 @@
 import datetime
 import getpass
 import json
-from json_writer import JSONWriter
 
+from encode_json import UnicumJSONEncoder
 from decode_json import decode_dict as _decode_dict
+
+_order = 'Name', 'Class', 'Module'
 
 
 class PersistentObject(object):
@@ -139,19 +141,25 @@ class PersistentObject(object):
         else:
             return [cls.from_serializable(d) for d in obj_dict]
 
-    def to_serializable(self, level=0, all_properties_flag=False):
+    def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         d = dict()
         for a in [a for a in dir(self) if self.__class__._is_visible(a)]:
             if a in self._modified_members or self._from_visible(a) in ['Name', 'Class', 'Module'] or all_properties_flag:
                 v = getattr(self, a)
-                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
-                v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
+                if recursive:
+                    v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
+                    v = v if isinstance(v, (float, int, long, list, dict, type(None))) else str(v)
                 d[self.__class__._from_visible(a)] = v
         return d
 
-    def to_json(self, all_properties_flag=False, dumps=json.dumps, **kwargs):
-        obj_dict = self.to_serializable(all_properties_flag=all_properties_flag)
-        return dumps(obj_dict, **kwargs)
+    def to_json(self, all_properties_flag=False, property_order=_order, **kwargs):
+        kwargs['cls'] = kwargs.pop('cls', UnicumJSONEncoder)
+        if issubclass(kwargs['cls'], UnicumJSONEncoder):
+            kwargs['key_order'] = property_order
+            obj = self
+        else:
+            obj = self.to_serializable(all_properties_flag=all_properties_flag)
+        return json.dumps(obj, **kwargs)
 
     def modify_object(self, property_name, property_value_variant=None):
         """
@@ -251,11 +259,12 @@ class PersistentList(list):
     def from_serializable(cls, item):
         return cls(item)
 
-    def to_serializable(self, level=0, all_properties_flag=False):
+    def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         r = list()
         for v in self:
-            v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
-            v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
+            if recursive:
+                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
+                v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
             r.append(v)
         return r
 
@@ -266,11 +275,12 @@ class PersistentDict(dict):
     def from_serializable(cls, item):
         return cls(item)
 
-    def to_serializable(self, level=0, all_properties_flag=False):
+    def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         r = dict()
         for k, v in self.items():
-            v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
-            v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
+            if recursive:
+                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
+                v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
             r[k] = v
         return r
 
@@ -380,7 +390,7 @@ class AttributeList(list):
             self._validate(value)
         super(AttributeList, self).extend(iterable)
 
-    def to_serializable(self, level=0, all_properties_flag=False):
+    def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         if not self:
             return [['Name', 'Class', 'Module']]
         # list of objects -> list of dicts
@@ -391,9 +401,10 @@ class AttributeList(list):
             l = list()
             for k in keys:
                 v = o.get(k, None)
-                v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
-                v = v if isinstance(v, self._value_types) else str(v)
-                # v = v if isinstance(v, (float, int, type(None))) else str(v)
+                if recursive:
+                    v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
+                    v = v if isinstance(v, self._value_types) else str(v)
+                    # v = v if isinstance(v, (float, int, type(None))) else str(v)
                 l.append(v)
             ret.append(l)
         return ret
