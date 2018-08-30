@@ -100,7 +100,7 @@ class DataRange(object):
             s = ', '.join([str(t) for t in self._value_types])
             t = type(value)
 
-            msg = 'All properties of item in this AttributeList must have type ' \
+            msg = 'All properties of item in this DataRange must have type ' \
                   'of either one of %s but not %s.' % (s, t)
             raise TypeError(msg)
 
