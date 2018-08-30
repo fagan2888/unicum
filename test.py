@@ -463,6 +463,13 @@ class DataRangeTest(TestCase):
         self.datarange = DataRange([h, x, y, z])
         pass
 
+    def test_init(self):
+        new_datarange = DataRange(self.datarange.to_serializable())
+        self.assertEqual(self.datarange.to_serializable(), new_datarange.to_serializable())
+
+        new_datarange = DataRange(self.datarange)
+        self.assertEqual(self.datarange.to_serializable(), new_datarange.to_serializable())
+
     def test_keys(self):
         self.assertEqual(self.datarange.col_keys(), ['A', 'B', 'C', 'D'])
         self.assertEqual(self.datarange.row_keys(), ['X', 'Y', 'Z'])

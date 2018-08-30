@@ -24,6 +24,10 @@ class DataRange(object):
         if isinstance(iterable, dict):
             iterable = DataRange.__dict_to_nested_list(iterable)
 
+        # convert DataRange into nested list
+        if isinstance(iterable, DataRange):
+            iterable = iterable.to_serializable()
+
         # replace None alias by None
         none_alias = none_alias if isinstance(none_alias, (tuple, list)) else [none_alias]
         if iterable:
