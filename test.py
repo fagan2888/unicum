@@ -8,7 +8,7 @@
 #  Copyright: 2016, 2017 Deutsche Postbank AG
 #  Website: https://github.com/pbrisk/unicum
 #  License: APACHE Version 2 License (see LICENSE file)
-
+import logging
 
 from datetime import datetime
 from json import dumps, loads, JSONEncoder
@@ -23,14 +23,17 @@ from unicum import DataRange
 
 _property_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
 
+h = logging.StreamHandler()
+h.setFormatter(logging.Formatter('%(asctime)s %(module)-18s %(levelname)-8s %(message)-120s', '%Y%m%d %H%M%S'))
+logging.getLogger('unicum').addHandler(h)
 
-class TestDummy(object):
+class _TestDummy(object):
     pass
 
 
 class SingletonTest(TestCase):
     def setUp(self):
-        class SingeltonDummy(TestDummy, SingletonObject):
+        class SingeltonDummy(_TestDummy, SingletonObject):
             pass
 
         self.Constant = SingeltonDummy
@@ -87,12 +90,12 @@ class FactoryTest(TestCase):
         class Interpolation(FactoryObject):
             __factory = dict()
 
-        class FactoryDummy(TestDummy, Interpolation):
+        class FactoryDummy(_TestDummy, Interpolation):
             pass
 
         self.FactoryDummy = FactoryDummy
 
-        class AnotherFactoryDummy(TestDummy, Interpolation):
+        class AnotherFactoryDummy(_TestDummy, Interpolation):
             pass
 
         self.AnotherFactoryDummy = AnotherFactoryDummy
@@ -354,6 +357,7 @@ class PersistentTest(TestCase):
 
     def test_modify_obj(self):
         q = MyPO()
+        q.modify_object('Property', 'Hello World.')
         q.modify_object('MyProperty', 'Hello World.')
         self.assertTrue(q._my_property_ == 'Hello World.')
         d = q.to_serializable()
@@ -361,6 +365,8 @@ class PersistentTest(TestCase):
 
         # no direct circle assignment
         self.assertRaises(ValueError, q.modify_object, 'MyProperty', q)
+
+
 
     def test_modify_factory_obj(self):
         class MyFactoryObject(FactoryObject):

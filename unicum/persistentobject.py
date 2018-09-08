@@ -13,11 +13,13 @@
 import datetime
 import getpass
 import json
+import logging
 
 from encode_json import UnicumJSONEncoder
 from decode_json import decode_dict as _decode_dict
 
 _order = 'Name', 'Class', 'Module'
+_logger = logging.getLogger('unicum')
 
 
 class PersistentObject(object):
@@ -194,14 +196,16 @@ class PersistentObject(object):
     def _modify_property(self, property_name, property_value_variant):
         # avoid circles
         if property_value_variant is self:
-            raise ValueError, 'Attributes must not be recursively. Not mapping self to %s.' % property_name
+            msg = 'Attributes must not be recursively. Not mapping self to %s.' % property_name
+            _logger.error(msg)
+            raise ValueError(msg)
 
         # handle not admissible property_name type
         if not isinstance(property_name, str):
             s = str(property_name), type(property_name), self.__class__.__name__
             msg = 'can not handle %s of type %s as a property in object of type %s' % s
-            print(msg)
-            # raise TypeError, msg
+            _logger.warning(msg)
+            # raise TypeError(msg)
             return
 
         # handle not admissible property_name
@@ -209,8 +213,8 @@ class PersistentObject(object):
             if property_name:
                 s = property_name, self.__class__.__name__, str(self)
                 msg = 'property %s in object of type %s not found in %s' % s
-                print(msg)
-                # raise ValueError, msg
+                _logger.warning(msg)
+                # raise ValueError(msg)
                 return
 
         # check type of property_value_variant
