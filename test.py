@@ -23,9 +23,7 @@ from unicum import DataRange
 
 _property_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
 
-h = logging.StreamHandler()
-h.setFormatter(logging.Formatter('%(asctime)s %(module)-18s %(levelname)-8s %(message)-120s', '%Y%m%d %H%M%S'))
-logging.getLogger('unicum').addHandler(h)
+logging.basicConfig()
 
 class _TestDummy(object):
     pass
