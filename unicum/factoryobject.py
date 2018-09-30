@@ -132,11 +132,14 @@ class ObjectList(list):
         if not isinstance(x, self._object_type):
             raise TypeError, 'All items in this ObjectList must be of subtype of %s ' %self._object_type.__name__
 
+    def __cast(self, x):
+        return x if isinstance(x, self._object_type) else self._object_type(x)
+
     def __iter__(self):
         return super(ObjectList, self).__iter__()
 
     def __setitem__(self, key, value):
-        value = self._object_type(value)
+        value = self.__cast(value)
         self.__validate(value)
         super(ObjectList, self).__setitem__(key, value)
 
@@ -164,35 +167,35 @@ class ObjectList(list):
         return self[item] if item in self else default
 
     def __add__(self, other):
-        other = [self._object_type(value) for value in other]
+        other = [self.__cast(value) for value in other]
         for value in other:
             self.__validate(value)
         return ObjectList(super(ObjectList, self).__add__(other), self._object_type)
 
     def __iadd__(self, other):
-        other = [self._object_type(value) for value in other]
+        other = [self.__cast(value) for value in other]
         for value in other:
             self.__validate(value)
         return self.__class__(super(ObjectList, self).__iadd__(other), self._object_type)
 
     def __setslice__(self, i, j, iterable):
-        iterable = [self._object_type(value) for value in iterable]
+        iterable = [self.__cast(value) for value in iterable]
         for value in iterable:
             self.__validate(value)
         super(ObjectList, self).__setslice__(i, j, iterable)
 
     def append(self, value):
-        value = self._object_type(value)
+        value = self.__cast(value)
         self.__validate(value)
         super(ObjectList, self).append(value)
 
     def insert(self, index, value):
-        value = self._object_type(value)
+        value = self.__cast(value)
         self.__validate(value)
         super(ObjectList, self).insert(index, value)
 
     def extend(self, iterable):
-        iterable = [self._object_type(value) for value in iterable]
+        iterable = [self.__cast(value) for value in iterable]
         for value in iterable:
             self.__validate(value)
         super(ObjectList, self).extend(iterable)
