@@ -35,10 +35,10 @@ class DataRange(object):
             iterable = [[f(c) for c in r] for r in iterable]
 
         # slice nested list iterable into (column headers, row headers, data)
-        col_keys, row_keys, values = DataRange.__slice_nested_list(iterable)
+        col_keys, row_keys, item_list = DataRange.__slice_nested_list(iterable)
 
         # validate iterable (only admissible value types)
-        for row_value in values:
+        for row_value in item_list:
             for value in row_value:
                 self._validate_value(value)
 
@@ -57,14 +57,16 @@ class DataRange(object):
 
         self._col_keys = col_keys
         self._row_keys = row_keys
+        self._item_list = item_list
 
         iterable = list()
-        for row_key, row_values in zip(row_keys, values):
+        for row_key, row_values in zip(row_keys, item_list):
             for col_key, value in zip(col_keys, row_values):
                 iterable.append(((row_key, col_key), value))
 
         # super(DataRange, self).__init__(iterable, **kwargs)
         self._dict = dict(iterable, **kwargs)
+        self._hash = hash(self)
 
     @staticmethod
     def __dict_to_nested_list(iterable):
@@ -119,6 +121,9 @@ class DataRange(object):
             msg = 'Key of %s must be (row_key, col_key) tuple with \n row_key in %s \n and col_key in %s' % s
             raise KeyError(msg)
         return True
+
+    def __hash__(self):
+        return hash(frozenset(self._dict.items()))
 
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(id(self))
@@ -182,6 +187,7 @@ class DataRange(object):
         raise NotImplementedError
 
     def __getslice__(self, i, j):
+        self._update_cache()
         if not isinstance(i, (tuple, list)):
             l = len(self._col_keys)
             return self[(i, 0):(j, l)]
@@ -262,38 +268,50 @@ class DataRange(object):
         for r, v in zip(self._row_keys, value_list):
             self[r, col_key] = v
 
+    def _update_cache(self):
+        if not self._hash == hash(self):
+            row_keys = sorted(list(set([row_key for row_key, col_key in self.keys()
+                                        if row_key not in self._row_keys])))
+            self._row_keys += row_keys
+
+            col_keys = sorted(list(set([col_key for row_key, col_key in self.keys()
+                                        if col_key not in self._col_keys])))
+            self._col_keys += col_keys
+
+            self._item_list = [[self.get((r, c)) for c in self._col_keys] for r in self._row_keys]
+            self._hash = hash(self)
+
     # @property
     def row_keys(self):
-        row_keys = sorted(list(set([row_key for row_key, col_key in self.keys()
-                                    if row_key not in self._row_keys])))
-        return self._row_keys + row_keys
+        self._update_cache()
+        return self._row_keys
 
     # @property
     def col_keys(self):
-        col_keys = sorted(list(set([col_key for row_key, col_key in self.keys()
-                                    if col_key not in self._col_keys])))
-        return self._col_keys + col_keys
+        self._update_cache()
+        return self._col_keys
 
     def row(self, item):
-        # r = self.row_keys()[item] if type(item) == int else item
-        return [self.get((item, c)) for c in self.col_keys()]
+        i = self.row_keys().index(item)
+        return self.item_list[i]
 
     def col(self, item):
-        # c = self.col_keys()[item] if type(item) == int else item
-        return [self.get((r, item)) for r in self.row_keys()]
+        j = self.col_keys().index(item)
+        return [row[j] for row in self.item_list]
 
     @property
     def item_list(self):
-        return [self.row(r) for r in self.row_keys()]
+        self._update_cache()
+        return self._item_list
 
     @property
     def total_list(self):
         if not self:
             return [[]]
-        row_keys = self.row_keys()
-        head = [[LEFT_TOP] + self.col_keys()]
-        body = [[r] + self.row(r) for r in row_keys]
-        return head + body
+        total = [[LEFT_TOP] + self.col_keys()]
+        for r, row in zip(self.row_keys(), self.item_list):
+            total.append([r] + row)
+        return total
 
     def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         ret = list()
@@ -328,4 +346,3 @@ class DataRange(object):
     def __reduce__(self):
 
         return self.__class__, (self.total_list, self._value_types, self._none_alias)
-
