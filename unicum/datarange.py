@@ -153,31 +153,16 @@ class DataRange(object):
 
     def __setitem__(self, key, value):
         self._validate_key_format(key)
-        if not key[0] in self.row_keys():
-            self._row_keys.append(key[0])
-        if not key[1] in self.col_keys():
-            self._col_keys.append(key[1])
         self._validate_value(value)
-        # super(DataRange, self).__setitem__(key, value)
         self._dict[key] = value
+        self._update_cache()
 
     def __getitem__(self, key):
         # redirect slice
         if isinstance(key, slice):
             return self.__getslice__(key.start, key.stop)
-
-        # gather which row or col is requested
-        # if key in self._row_keys or type(key) is int:
-        #     return self.row(key)
-        # elif key in self._col_keys:
-        #     return self.col(key)
-
         self._validate_key_format(key)
-
-        r, c = key
-        self._validate_key_existence((r, c))
-
-        # return super(DataRange, self).get((r, c), None)
+        self._validate_key_existence(key)
         return self._dict.get(key, None)
 
     def __delitem__(self, key):
@@ -194,10 +179,10 @@ class DataRange(object):
 
         ri, ci = i
         rj, cj = j
-        ri = self._row_index(ri)
-        rj = self._row_index(rj) + 1 if rj in self._row_keys else rj
-        ci = self._col_index(ci)
-        cj = self._col_index(cj) + 1 if cj in self._col_keys else cj
+        ri = self._row_keys.index(ri) if self._row_keys.count(ri) else ri
+        rj = self._row_keys.index(rj) + 1 if self._row_keys.count(rj) else rj
+        ci = self._col_keys.index(ci) if self._col_keys.count(ci) else ci
+        cj = self._col_keys.index(cj) + 1 if self._col_keys.count(cj) else cj
         row_keys = self._row_keys[ri:rj]
         col_keys = self._col_keys[ci:cj]
         ret = list()
@@ -210,7 +195,9 @@ class DataRange(object):
         raise NotImplementedError
 
     def update(self, other):
-        return self._dict.update(other)
+        r = self._dict.update(other)
+        self._update_cache()
+        return r
 
     def keys(self):
         return self._dict.keys()
@@ -225,16 +212,12 @@ class DataRange(object):
         return self._dict.get(key, default)
 
     def pop(self, key, default=None):
-        return self._dict.pop(key, default)
+        r = self._dict.pop(key, default)
+        self._update_cache()
+        return r
 
     def popitem(self):
-        return self._dict.popitem()
-
-    def _row_index(self, key):
-        return self._row_keys.index(key) if self._row_keys.count(key) else key
-
-    def _col_index(self, key):
-        return self._col_keys.index(key) if self._col_keys.count(key) else key
+        raise NotImplementedError
 
     def row_append(self, row_key, value_list):
         """
@@ -247,9 +230,7 @@ class DataRange(object):
             raise KeyError('Key %s already exists in row keys.' % row_key)
         if not len(value_list) == len(self._col_keys):
             raise ValueError('Length of data to set does not meet expected row length of %i' % len(self._col_keys))
-        self._row_keys.append(row_key)
-        for c, v in zip(self._col_keys, value_list):
-            self[row_key, c] = v
+        self.update(zip(zip([row_key]*len(self._col_keys), self._col_keys), value_list))
 
     def col_append(self, col_key, value_list):
         """
@@ -264,9 +245,7 @@ class DataRange(object):
             value_list = [value_list] * len(self._row_keys)
         if not len(value_list) == len(self._row_keys):
             raise ValueError('Length of data to set does not meet expected col length of %i' % len(self._row_keys))
-        self._col_keys.append(col_key)
-        for r, v in zip(self._row_keys, value_list):
-            self[r, col_key] = v
+        self.update(zip(zip(self._row_keys, [col_key]*len(self._row_keys)), value_list))
 
     def _update_cache(self):
         if not self._hash == hash(self):
@@ -283,12 +262,10 @@ class DataRange(object):
 
     # @property
     def row_keys(self):
-        self._update_cache()
         return self._row_keys
 
     # @property
     def col_keys(self):
-        self._update_cache()
         return self._col_keys
 
     def row(self, item):
@@ -301,7 +278,6 @@ class DataRange(object):
 
     @property
     def item_list(self):
-        self._update_cache()
         return self._item_list
 
     @property
@@ -333,12 +309,7 @@ class DataRange(object):
         self.row_append(key, value)
 
     def extend(self, other):
-        assert isinstance(other, self.__class__)
-        for key, value in other.items():
-            assert key not in self
-            self[key] = value
-
-        return self
+        raise NotImplementedError
 
     def insert(self, item, key, value=None):
         raise NotImplementedError
