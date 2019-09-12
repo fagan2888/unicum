@@ -70,8 +70,8 @@ class DataRange(object):
 
     @staticmethod
     def __dict_to_nested_list(iterable):
-        item_list = [iterable.keys()]
-        for i in xrange(max(map(len, iterable.values()))):
+        item_list = [list(iterable.keys())]
+        for i in range(max(list(map(len, list(iterable.values()))))):
             item_list.append([iterable[k][i] for k in item_list[0]])
         return item_list
 
@@ -83,7 +83,7 @@ class DataRange(object):
         # extract column headers from first row
         col_header = iterable.pop(0)
         if not len(set(col_header)) == len(col_header):
-            raise ValueError, 'All column header entries must be unique.'
+            raise ValueError('All column header entries must be unique.')
 
         # extract row headers if given
         if col_header.count(None):
@@ -91,9 +91,9 @@ class DataRange(object):
             col_header.pop(i)
             row_header = [row.pop(i) for row in iterable]
         else:
-            row_header = range(len(iterable))
+            row_header = list(range(len(iterable)))
             if not len(set(row_header)) == len(row_header):
-                raise ValueError, 'All row header entries must be unique.'
+                raise ValueError('All row header entries must be unique.')
 
         return col_header, row_header, iterable
 
@@ -123,7 +123,7 @@ class DataRange(object):
         return True
 
     def __hash__(self):
-        return hash(frozenset(self._dict.items()))
+        return hash(frozenset(list(self._dict.items())))
 
     def __repr__(self):
         return self.__class__.__name__ + '(%s)' % str(id(self))
@@ -200,13 +200,13 @@ class DataRange(object):
         return r
 
     def keys(self):
-        return self._dict.keys()
+        return list(self._dict.keys())
 
     def values(self):
-        return self._dict.values()
+        return list(self._dict.values())
 
     def items(self):
-        return self._dict.items()
+        return list(self._dict.items())
 
     def get(self, key, default=None):
         return self._dict.get(key, default)
@@ -230,7 +230,7 @@ class DataRange(object):
             raise KeyError('Key %s already exists in row keys.' % row_key)
         if not len(value_list) == len(self._col_keys):
             raise ValueError('Length of data to set does not meet expected row length of %i' % len(self._col_keys))
-        self.update(zip(zip([row_key]*len(self._col_keys), self._col_keys), value_list))
+        self.update(list(zip(list(zip([row_key]*len(self._col_keys), self._col_keys)), value_list)))
 
     def col_append(self, col_key, value_list):
         """
@@ -245,15 +245,15 @@ class DataRange(object):
             value_list = [value_list] * len(self._row_keys)
         if not len(value_list) == len(self._row_keys):
             raise ValueError('Length of data to set does not meet expected col length of %i' % len(self._row_keys))
-        self.update(zip(zip(self._row_keys, [col_key]*len(self._row_keys)), value_list))
+        self.update(list(zip(list(zip(self._row_keys, [col_key]*len(self._row_keys))), value_list)))
 
     def _update_cache(self):
         if not self._hash == hash(self):
-            row_keys = sorted(list(set([row_key for row_key, col_key in self.keys()
+            row_keys = sorted(list(set([row_key for row_key, col_key in list(self.keys())
                                         if row_key not in self._row_keys])))
             self._row_keys += row_keys
 
-            col_keys = sorted(list(set([col_key for row_key, col_key in self.keys()
+            col_keys = sorted(list(set([col_key for row_key, col_key in list(self.keys())
                                         if col_key not in self._col_keys])))
             self._col_keys += col_keys
 
@@ -303,7 +303,7 @@ class DataRange(object):
         return ret
 
     def transpose(self):
-        return self.__class__(zip(*self.total_list), value_types=self._value_types, none_alias=self._none_alias)
+        return self.__class__(list(zip(*self.total_list)), value_types=self._value_types, none_alias=self._none_alias)
 
     def append(self, key, value):
         self.row_append(key, value)

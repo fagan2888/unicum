@@ -1,7 +1,9 @@
 from json import JSONEncoder
-from json.encoder import encode_basestring_ascii, encode_basestring, FLOAT_REPR, INFINITY
+from json.encoder import encode_basestring_ascii, encode_basestring, INFINITY
 
-from datarange import DataRange
+from .datarange import DataRange
+
+FLOAT_REPR = float.__repr__
 
 
 class UnicumJSONEncoder(JSONEncoder):
@@ -33,11 +35,12 @@ class UnicumJSONEncoder(JSONEncoder):
             _encoder = encode_basestring_ascii
         else:
             _encoder = encode_basestring
-        if self.encoding != 'utf-8':
-            def _encoder(o, _orig_encoder=_encoder, _encoding=self.encoding):
-                if isinstance(o, str):
-                    o = o.decode(_encoding)
-                return _orig_encoder(o)
+        # turned off sc
+        # #if self.encoding != 'utf-8':
+        #    def _encoder(o, _orig_encoder=_encoder, _encoding=self.encoding):
+        #        if isinstance(o, str):
+        #            o = o.decode(_encoding)
+        #       return _orig_encoder(o)
 
         def floatstr(o, allow_nan=self.allow_nan,
                      _repr=FLOAT_REPR, _inf=INFINITY, _neginf=-INFINITY):
@@ -73,15 +76,14 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                      _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot, _key_order,
                      ## HACK: hand-optimized bytecode; turn globals into locals
                      ValueError=ValueError,
-                     basestring=basestring,
                      dict=dict,
                      float=float,
                      id=id,
                      int=int,
                      isinstance=isinstance,
                      list=list,
-                     long=long,
                      str=str,
+                     long=int,
                      tuple=tuple,
                      ):
     def _iterencode_list(lst, _current_indent_level):
@@ -108,7 +110,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 first = False
             else:
                 buf = separator
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 yield buf + _encoder(value)
             elif value is None:
                 yield buf + 'null'
@@ -116,7 +118,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 yield buf + 'true'
             elif value is False:
                 yield buf + 'false'
-            elif isinstance(value, (int, long)):
+            elif isinstance(value, int):
                 yield buf + str(value)
             elif isinstance(value, float):
                 yield buf + _floatstr(value)
@@ -161,9 +163,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             item_separator = _item_separator
         first = True
         if _sort_keys:
-            items = sorted(dct.items(), key=lambda kv: kv[0])
+            items = sorted(list(dct.items()), key=lambda kv: kv[0])
         else:
-            items = dct.iteritems()
+            items = iter(dct.items())
         if _key_order:
             old_items = list(items)
             new_items = list()
@@ -176,7 +178,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     new_items.append((k, v))
             items = new_items
         for key, value in items:
-            if isinstance(key, basestring):
+            if isinstance(key, str):
                 pass
             # JavaScript is weakly typed for these, so it makes sense to
             # also allow them.  Many encoders seem to do something like this.
@@ -188,7 +190,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 key = 'false'
             elif key is None:
                 key = 'null'
-            elif isinstance(key, (int, long)):
+            elif isinstance(key, int):
                 key = str(key)
             elif _skipkeys:
                 continue
@@ -200,7 +202,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 yield item_separator
             yield _encoder(key)
             yield _key_separator
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 yield _encoder(value)
             elif value is None:
                 yield 'null'
@@ -208,7 +210,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 yield 'true'
             elif value is False:
                 yield 'false'
-            elif isinstance(value, (int, long)):
+            elif isinstance(value, int):
                 yield str(value)
             elif isinstance(value, float):
                 yield _floatstr(value)
@@ -252,7 +254,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         # simple gathering of cell space
         # cell_space = max(max(map(len, _iterencode_data_range_line(item, 0, 0))) for item in rng)
         # col specific gathering of cell space
-        cell_space = list(max(map(len, _iterencode_data_range_line(item, 0, 0))) for item in zip(*rng))
+        cell_space = list(max(list(map(len, _iterencode_data_range_line(item, 0, 0)))) for item in zip(*rng))
         for value in rng:
             if first:
                 first = False
@@ -308,7 +310,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             del markers[markerid]
 
     def _iterencode(o, _current_indent_level):
-        if isinstance(o, basestring):
+        if isinstance(o, str):
             yield _encoder(o)
         elif o is None:
             yield 'null'
@@ -316,7 +318,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield 'true'
         elif o is False:
             yield 'false'
-        elif isinstance(o, (int, long)):
+        elif isinstance(o, int):
             yield str(o)
         elif isinstance(o, float):
             yield _floatstr(o)

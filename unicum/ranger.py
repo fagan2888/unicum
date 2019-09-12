@@ -50,7 +50,7 @@ def dict_from_range(range_list):
             key_value_dict[key] = value
 
     # strip values
-    for key, value in key_value_dict.iteritems():
+    for key, value in key_value_dict.items():
         # could be : a) list -> simple property or b) nested list -> range property
         if value:
             if isinstance(value[0], (list, tuple)):

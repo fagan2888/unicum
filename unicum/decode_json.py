@@ -31,8 +31,8 @@ def parse_json_str(json_str):
 def decode_list(data):
     rv = []
     for item in data:
-        if isinstance(item, unicode):
-            item = item.encode('utf-8')
+        if isinstance(item, str):
+            item = item#.encode('utf-8')
             if type(item) == type(""):
                 if not item.isdigit():
                     try:
@@ -49,11 +49,15 @@ def decode_list(data):
 
 def decode_dict(data):
     rv = {}
-    for key, value in data.iteritems():
-        if isinstance(key, unicode):
-            key = key.encode('utf-8')
-        if isinstance(value, unicode):
-            value = value.encode('utf-8')
+    for key, value in data.items():
+        if isinstance(key, str):
+            pass
+            # disabled for python 3
+            #key = key.encode('utf-8').decode('ascii')
+        if isinstance(value, str):
+            pass
+            # disabled for python 3
+            # value = value.encode('utf-8').decode('ascii')
         elif isinstance(value, list):
             value = decode_list(value)
         elif isinstance(value, dict):

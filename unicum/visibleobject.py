@@ -10,11 +10,11 @@
 #  License: APACHE Version 2 License (see LICENSE file)
 
 
-from factoryobject import FactoryObject, ObjectList
-from linkedobject import LinkedObject
-from persistentobject import PersistentObject, AttributeList, _order
-from datarange import DataRange
-from ranger import dict_from_range, range_from_dict
+from .factoryobject import FactoryObject, ObjectList
+from .linkedobject import LinkedObject
+from .persistentobject import PersistentObject, AttributeList, _order
+from .datarange import DataRange
+from .ranger import dict_from_range, range_from_dict
 
 
 class VisibleObject(FactoryObject, LinkedObject, PersistentObject):

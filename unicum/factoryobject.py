@@ -22,6 +22,8 @@ class FactoryType(type):
         if instance is None:
             instance = cls.__new__(cls, *args, **kwargs)
             instance.__init__(*args, **kwargs)
+            #instance = cls(*args, **kwargs)
+
         return instance
 
     @classmethod
@@ -29,11 +31,12 @@ class FactoryType(type):
         return default
 
 
-class FactoryObject(object):
+class FactoryObject(object, metaclass=FactoryType):
     """ Objects identified by name """
     __factory = dict()
 
-    __metaclass__ = FactoryType
+    def __init__(self, *args, **kwargs):
+        super(FactoryObject, self).__init__()
 
     @classmethod
     def _get_factory(cls):
@@ -60,7 +63,7 @@ class FactoryObject(object):
 
     def remove(self):
         factory = self.__class__._get_factory()
-        for k, v in factory.items():
+        for k, v in list(factory.items()):
             if v == self:
                 factory.pop(k)
         return self
@@ -75,10 +78,10 @@ class FactoryObject(object):
     @classmethod
     def filter(cls, filter_func=None):
         if filter_func is None:
-            return cls.keys()
+            return list(cls.keys())
 
         factory = cls._get_factory()
-        return sorted([k for k, v in factory.items() if filter_func(v)])
+        return sorted([k for k, v in list(factory.items()) if filter_func(v)])
 
     @classmethod
     def get(cls, key, default=None):
@@ -88,24 +91,24 @@ class FactoryObject(object):
     @classmethod
     def keys(cls):
         factory = cls._get_factory()
-        return factory.keys()
+        return list(factory.keys())
 
     @classmethod
     def values(cls):
         factory = cls._get_factory()
-        return factory.values()
+        return list(factory.values())
 
     @classmethod
     def items(cls):
         factory = cls._get_factory()
-        return factory.items()
+        return list(factory.items())
 
 
 class ObjectList(list):
 
     def __init__(self, iterable=None, object_type=FactoryObject):
         if not issubclass(object_type, FactoryObject):
-            raise TypeError, 'Required object type of ObjectList items must be subtype of %s ' % FactoryObject.__name__
+            raise TypeError('Required object type of ObjectList items must be subtype of %s ' % FactoryObject.__name__)
         self._object_type = object_type
         if iterable is None:
             super(ObjectList, self).__init__()
@@ -130,7 +133,7 @@ class ObjectList(list):
 
     def __validate(self, x):
         if not isinstance(x, self._object_type):
-            raise TypeError, 'All items in this ObjectList must be of subtype of %s ' %self._object_type.__name__
+            raise TypeError('All items in this ObjectList must be of subtype of %s ' %self._object_type.__name__)
 
     def __cast(self, x):
         return x if isinstance(x, self._object_type) else self._object_type(x)
