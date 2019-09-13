@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -15,15 +15,13 @@ import warnings
 from inspect import getargspec, ismethod
 from logging import getLogger
 from traceback import format_exc
-
-import datetime
-import hashlib
+from os import linesep
 
 from multiprocessing import Process, Queue
 
 
 class SessionHandler(object):
-    """ api session handler for multiprocessing sessions """
+
     _types = {
         'number': int,
         'year': int,
@@ -34,29 +32,53 @@ class SessionHandler(object):
         'float': float,
         'value': float,
         'str': str,
+        'string': str,
         'name': str,
         'bool': bool,
         'flag': bool,
         'variant': (lambda x: x)
     }
 
-    def __init__(self):
+    def __init__(self, pkg_name='unicum', cls_name='VisibleObject', cast_types={}):
+        """ api session handler for multiprocessing sessions
+
+        :param pkg_name: module containing relevant classes
+        :param cls_name: default class (inherited from unicum.VisibleObject)
+        :param types: additional dict of types to cast arguments
+
+        Standard type conversion is following a naming convention.
+        So if an arguments ends with `int` the value will be casted with the type :code:`int`
+        given as value to the key `int` in **types**.
+
+        Same with `number`, `year`, `month`, `day` and `long`.
+        Similar we cast `float` and `value` to a :code:`float`,
+        `string`, `str` and `name` to a :code:`str` as well as
+        `bool` and  `flag` to :code:`bool`
+
+        Anything ending with `variant` would be ignored.
+
+        And finally, the value of `cls` will be replaced by an attribute of **pkg_name** of the same name
+        and the value of `self` will be replaced by an **cls_name** instance.
+
+        """
+
+        self._pkg_name = pkg_name
+        self._cls_name = cls_name
+        self._cast_types = dict()
+        self._cast_types.update(self.__class__._types)
+        self._cast_types.update(cast_types)
+
         # initialize session dict
         self._sessions = dict()
 
-    def start_session(self, session_id, pkg_name='unicum', cls_name='VisibleObject', cast_types=_types):
-        """ starts a session
+    def start_session(self, session_id):
+        """ starts a session with given session_id """
 
-        :param session_id: name of session
-        :param pkg_name: module containing relevant classes, optional (default: unicum)
-        :param cls_name: default class (inherited from unicum.VisibleObject), optional (default: 'VisibleObject')
-        :param types: addtional types to cast arguments
-        """
         assert session_id not in self._sessions
 
         task_queue = Queue()
         result_queue = Queue()
-        args = task_queue, result_queue, pkg_name, cls_name, cast_types
+        args = task_queue, result_queue, self._pkg_name, self._cls_name, self._cast_types
 
         session = Process(target=self._run, name=session_id, args=args)
         self._sessions[session_id] = session, task_queue, result_queue
@@ -64,11 +86,11 @@ class SessionHandler(object):
         return session_id
 
     def validate_session(self, session_id):
+        """ checks wether a session with given session id exists """
         return session_id in self._sessions
 
     def call_session(self, session_id, func='', kwargs={}):
-        """ create object """
-
+        """ calls the session and makes a function call with kwargs (which will be casted accordingly) """
         if session_id not in self._sessions:
             return 'session %s does not exists.' % session_id
 
@@ -81,7 +103,7 @@ class SessionHandler(object):
         return result
 
     def stop_session(self, session_id):
-        """ closes a session """
+        """ closes a session with given session_id """
         assert session_id in self._sessions
         session, task_queue, result_queue = self._sessions.pop(session_id)
         session.terminate()
@@ -93,7 +115,7 @@ class SessionHandler(object):
         """ run session loop """
 
         _module = __import__(pkg_name)
-        _class= getattr(_module, cls_name)
+        _class = getattr(_module, cls_name)
         _types = types
         _types['cls'] = (lambda c: getattr(_module, c)),
         _types['self'] = _class,
@@ -151,7 +173,7 @@ class SessionHandler(object):
                 if _self in list(_cls.keys()):
                     obj = _cls(_self)
                 else:
-                    raise KeyError('Object %s does not exists.' %_self)
+                    raise KeyError('Object %s does not exists.' % _self)
             else:
                 obj = _cls
             func = obj._to_visible(func).strip('_')
@@ -193,7 +215,7 @@ class SessionHandler(object):
                 value = _prepickle(value)
             except Exception as e:
                 value = e.__class__.__name__ + ': ' + str(e)
-                warnings.warn('%s was raised.' %value)
+                warnings.warn('%s was raised.' % value)
                 getLogger().error(format_exc())
 
             # send to result queue

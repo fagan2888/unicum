@@ -3,18 +3,21 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
 # License:  Apache License 2.0 (see LICENSE file)
 
+import json
 
 from .factoryobject import FactoryObject, ObjectList
 from .linkedobject import LinkedObject
 from .persistentobject import PersistentObject, AttributeList, _order
 from .datarange import DataRange
 from .ranger import dict_from_range, range_from_dict
+from .encode_json import UnicumJSONEncoder
+from .decode_json import decode_dict as _decode_dict
 
 
 class VisibleObject(FactoryObject, LinkedObject, PersistentObject):
@@ -46,6 +49,15 @@ class VisibleObject(FactoryObject, LinkedObject, PersistentObject):
         else:
             return FactoryObject.to_serializable(self, all_properties_flag, recursive=recursive)
 
+    def to_json(self, all_properties_flag=False, property_order=_order, **kwargs):
+        kwargs['cls'] = kwargs.pop('cls', UnicumJSONEncoder)
+        if issubclass(kwargs['cls'], UnicumJSONEncoder):
+            kwargs['key_order'] = property_order
+            obj = self
+        else:
+            obj = self.to_serializable(all_properties_flag=all_properties_flag)
+        return json.dumps(obj, **kwargs)
+
     def to_range(self, all_properties_flag=False):
         s = self.to_serializable(0, all_properties_flag)
         r = range_from_dict(s, _order)
@@ -63,6 +75,14 @@ class VisibleObject(FactoryObject, LinkedObject, PersistentObject):
         else:
             obj = FactoryObject.from_serializable(str(item))
         return obj
+
+    @classmethod
+    def from_json(cls, json_str):
+        obj_dict = json.loads(json_str, object_hook=_decode_dict)
+        if isinstance(obj_dict, dict):
+            return cls.from_serializable(obj_dict)
+        else:
+            return [cls.from_serializable(d) for d in obj_dict]
 
     @classmethod
     def from_range(cls, range_list, register_flag=True):

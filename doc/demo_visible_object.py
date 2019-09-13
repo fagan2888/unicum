@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -33,20 +33,18 @@ class Student(Person):
     pass
 
 
+class Teacher(Person):
+    pass
+
+
+class ClassRoom(VisibleObject):
+    pass
+
+
 class StudentList(VisibleAttributeList):
     def __init__(self, iterable=None, object_type=Student,
                  value_types=(float, int, str, type(None), VisibleObject)):
         super(VisibleAttributeList, self).__init__(iterable, object_type, value_types)
-
-
-class Class(VisibleObject):
-    def __init__(self, name=''):
-        super(Class, self).__init__(name)
-        self._students_ = StudentList()
-
-
-class Teacher(Person):
-    pass
 
 
 class TeacherList(VisibleAttributeList):
@@ -55,14 +53,16 @@ class TeacherList(VisibleAttributeList):
         super(VisibleAttributeList, self).__init__(iterable, object_type, value_types)
 
 
-class ClassRoom(VisibleObject):
-    pass
-
-
 class ClassRoomList(VisibleAttributeList):
     def __init__(self, iterable=None, object_type=ClassRoom,
                  value_types=(float, int, str, type(None), VisibleObject)):
         super(VisibleAttributeList, self).__init__(iterable, object_type, value_types)
+
+
+class Class(VisibleObject):
+    def __init__(self, name=''):
+        super(Class, self).__init__(name)
+        self._students_ = StudentList()
 
 
 class Lesson(VisibleObject):
@@ -97,13 +97,7 @@ class School(VisibleObject):
 if __name__=='__main__':
 
     School().register()
-    School().modify_object('Teachers', TeacherList(('Mr. Logan', 'Mrs. Smith')).register())
-    School().modify_object('Students', StudentList(('Tom','Ben','Luisa','Peter','Paul','Mary')).register())
-    School().modify_object('ClassRooms', ClassRoomList(('Room 1','Room 2','Hall')).register())
-
-    Class('FreshMen').register().modify_object('Students', School().get_property('Students')[:3])
-    Class('Senior').register().modify_object('Students', School().get_property('Students')[3:])
-
+    School().modify_object('Schedule', Schedule())
     School().get_property('Schedule').append(
         Lesson.create(Subject='Math', Teacher='Mr. Logan', Class='FreshMen', ClassRoom='Room 1', Time='8:30'))
     School().get_property('Schedule').append(
@@ -117,6 +111,48 @@ if __name__=='__main__':
     School().get_property('Schedule').append(
         Lesson.create(Subject='History', Teacher='Mrs. Smith', Class='FreshMen', ClassRoom='Room 1', Time='12:00'))
 
+    School().modify_object('Teachers', TeacherList(('Mr. Logan', 'Mrs. Smith')).register())
+    School().modify_object('Students', StudentList(('Tom','Ben','Luisa','Peter','Paul','Mary')).register())
+    School().modify_object('ClassRooms', ClassRoomList(('Room 1','Room 2','Hall')).register())
+
+    Class('FreshMen').register().modify_object('Students', School().get_property('Students')[:3])
+    Class('Senior').register().modify_object('Students', School().get_property('Students')[3:])
+
     print(School().to_json(all_properties_flag=True, indent=2))
 
-    #
+'''
+{
+  "Name": "School",
+  "Class": "School",
+  "Module": "__main__",
+  "ClassRooms": [
+    [     "Class" ,  "Module" ,  "Name" ],
+    [ "ClassRoom" ,"__main__" ,"Room 1" ],
+    [ "ClassRoom" ,"__main__" ,"Room 2" ],
+    [ "ClassRoom" ,"__main__" ,  "Hall" ]
+  ],
+  "Schedule": [
+    [    "Class" ,"ClassRoom" ,  "Module" ,  "Name" ,"Subject" ,   "Teacher" , "Time" ],
+    [ "FreshMen" ,   "Room 1" ,"__main__" ,"Lesson" ,   "Math" , "Mr. Logan" , "8:30" ],
+    [   "Senior" ,   "Room 2" ,"__main__" ,"Lesson" ,"Physics" , "Mr. Logan" ,"10:15" ],
+    [   "Senior" ,   "Room 2" ,"__main__" ,"Lesson" ,   "Math" , "Mr. Logan" ,"12:00" ],
+    [   "Senior" ,   "Room 2" ,"__main__" ,"Lesson" ,"History" ,"Mrs. Smith" , "8:30" ],
+    [ "FreshMen" ,     "Hall" ,"__main__" ,"Lesson" , "Sports" ,"Mrs. Smith" ,"10:15" ],
+    [ "FreshMen" ,   "Room 1" ,"__main__" ,"Lesson" ,"History" ,"Mrs. Smith" ,"12:00" ]
+  ],
+  "Students": [
+    [   "Class" ,  "Module" , "Name" ],
+    [ "Student" ,"__main__" ,  "Tom" ],
+    [ "Student" ,"__main__" ,  "Ben" ],
+    [ "Student" ,"__main__" ,"Luisa" ],
+    [ "Student" ,"__main__" ,"Peter" ],
+    [ "Student" ,"__main__" , "Paul" ],
+    [ "Student" ,"__main__" , "Mary" ]
+  ],
+  "Teachers": [
+    [   "Class" ,  "Module" ,      "Name" ],
+    [ "Teacher" ,"__main__" , "Mr. Logan" ],
+    [ "Teacher" ,"__main__" ,"Mrs. Smith" ]
+  ]
+}
+'''

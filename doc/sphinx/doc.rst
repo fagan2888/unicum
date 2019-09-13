@@ -29,7 +29,6 @@ Class List
     visibleobject.VisibleAttributeList
     visibleobject.VisibleDataRange
 
-    session.Session
     session.SessionHandler
 
 
@@ -47,31 +46,37 @@ Visible Objects
 
 
 
+SessionHandler
+==============
+
+.. automodule:: unicum.session
+
+
+
+Base Objects
+============
+
 Factory Objects
-===============
+---------------
 
 .. automodule:: unicum.factoryobject
 
 
 Linked Objects
-==============
+--------------
 
 .. automodule:: unicum.linkedobject
 
 
 Persistent Objects
-==================
+------------------
 
 .. automodule:: unicum.persistentobject
 
 
 DataRange Object
-================
+----------------
 
 .. automodule:: unicum.datarange
 
 
-Session Objects
-===============
-
-.. automodule:: unicum.session

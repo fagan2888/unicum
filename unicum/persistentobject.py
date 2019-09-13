@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -12,11 +12,7 @@
 
 import datetime
 import getpass
-import json
 import logging
-
-from .encode_json import UnicumJSONEncoder
-from .decode_json import decode_dict as _decode_dict
 
 _order = 'Name', 'Class', 'Module'
 _logger = logging.getLogger('unicum')
@@ -135,14 +131,6 @@ class PersistentObject(object):
         obj.modify_object(object_dict)
         return obj
 
-    @classmethod
-    def from_json(cls, json_str):
-        obj_dict = json.loads(json_str, object_hook=_decode_dict)
-        if isinstance(obj_dict, dict):
-            return cls.from_serializable(obj_dict)
-        else:
-            return [cls.from_serializable(d) for d in obj_dict]
-
     def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         d = dict()
         for a in [a for a in dir(self) if self.__class__._is_visible(a)]:
@@ -153,15 +141,6 @@ class PersistentObject(object):
                     v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
                 d[self.__class__._from_visible(a)] = v
         return d
-
-    def to_json(self, all_properties_flag=False, property_order=_order, **kwargs):
-        kwargs['cls'] = kwargs.pop('cls', UnicumJSONEncoder)
-        if issubclass(kwargs['cls'], UnicumJSONEncoder):
-            kwargs['key_order'] = property_order
-            obj = self
-        else:
-            obj = self.to_serializable(all_properties_flag=all_properties_flag)
-        return json.dumps(obj, **kwargs)
 
     def modify_object(self, property_name, property_value_variant=None):
         """

@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -22,12 +22,10 @@ from unicum import SessionHandler, VisibleObject
 class DemoServer(Flask):
     """ restful api class """
 
-    def __init__(self, sessin_handler=SessionHandler(), pkg_name='', cls_name='', *args, **kwargs):
+    def __init__(self, session_handler=SessionHandler(), *args, **kwargs):
 
         # store session properties
-        self._session_handler = sessin_handler
-        self._pkg_name = pkg_name
-        self._cls_name = cls_name
+        self._session_handler = session_handler
 
         # initialize Flask
         kwargs['import_name'] = kwargs.get('import_name', 'unicum_web_service')
@@ -48,7 +46,7 @@ class DemoServer(Flask):
         hash_str = str(request.remote_addr) + str(datetime.now())
         session_id = md5(hash_str.encode()).hexdigest()
 
-        session_id = self._session_handler.start_session(session_id, pkg_name=self._pkg_name, cls_name=self._cls_name)
+        session_id = self._session_handler.start_session(session_id)
         return make_response(session_id, 200)
 
     def _validate_session(self, session_id):
@@ -112,7 +110,7 @@ if __name__ == '__main__':
     # start server at http://127.0.0.1:64001
     url, port = '127.0.0.1', '64001'
     base_url = 'http://%s:%s/' % (url, port)
-    start_new_thread(DemoServer(SessionHandler(), 'demo_server', 'DemoObject').run, (url, port))
+    start_new_thread(DemoServer(SessionHandler('demo_server', 'DemoObject')).run, (url, port))
 
     # start session
     session_id = requests.get(url=base_url)

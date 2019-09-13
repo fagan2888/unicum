@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -14,6 +14,7 @@ from json import JSONEncoder
 from json.encoder import encode_basestring_ascii, encode_basestring, INFINITY
 
 from .datarange import DataRange
+from .persistentobject import AttributeList
 
 FLOAT_REPR = float.__repr__
 
@@ -23,9 +24,9 @@ class UnicumJSONEncoder(JSONEncoder):
         self._order = key_order
         super(UnicumJSONEncoder, self).__init__(*args, **kwargs)
 
-    def default(self, obj):
+    def default(self, obj, level=0):
         if hasattr(obj, 'to_serializable'):
-            return obj.to_serializable(recursive=False)
+            return obj.to_serializable(recursive=False, level=level)
         else:
             return super(UnicumJSONEncoder, self).default(obj)
 
@@ -136,7 +137,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 yield buf + _floatstr(value)
             else:
                 yield buf
-                if isinstance(value, DataRange):
+                if isinstance(value, (DataRange, AttributeList)):
                     chunks = _iterencode_data_range(value.to_serializable(_current_indent_level), _current_indent_level)
                 elif isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
@@ -157,7 +158,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if not dct:
             yield '{}'
             return
-        if isinstance(dct, DataRange):
+        if isinstance(dct, (DataRange, AttributeList)):
             _iterencode_data_range(dct, _current_indent_level)
         if markers is not None:
             markerid = id(dct)
@@ -227,7 +228,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif isinstance(value, float):
                 yield _floatstr(value)
             else:
-                if isinstance(value, DataRange):
+                if isinstance(value, (DataRange, AttributeList)):
                     chunks = _iterencode_data_range(value.to_serializable(_current_indent_level), _current_indent_level)
                 elif isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
@@ -321,7 +322,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if markers is not None:
             del markers[markerid]
 
-    def _iterencode(o, _current_indent_level):
+    def _iterencode(o, _current_indent_level, level=0):
         if isinstance(o, str):
             yield _encoder(o)
         elif o is None:
@@ -334,7 +335,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield str(o)
         elif isinstance(o, float):
             yield _floatstr(o)
-        elif isinstance(o, DataRange):
+        elif isinstance(o, (DataRange, AttributeList)):
             for chunk in _iterencode_data_range(o.to_serializable(_current_indent_level), _current_indent_level):
                 yield chunk
         elif isinstance(o, (list, tuple)):
@@ -349,8 +350,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 if markerid in markers:
                     raise ValueError("Circular reference detected")
                 markers[markerid] = o
-            o = _default(o)
-            for chunk in _iterencode(o, _current_indent_level):
+            o = _default(o, level=level)
+            for chunk in _iterencode(o, _current_indent_level, level=1):
                 yield chunk
             if markers is not None:
                 del markers[markerid]

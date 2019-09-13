@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -341,20 +341,6 @@ class PersistentTest(TestCase):
         e = {'Class': 'YourPO', 'Module': __name__}
         self.assertTrue(MyPO.from_serializable(e).to_serializable()['Class'] == 'YourPO')
 
-    def test_json(self):
-        e = {'Class': 'PersistentObject'}
-        j = dumps(e)
-        o = PersistentObject.from_json(j)
-        self.assertEqual(type(o), PersistentObject)
-
-        e = {'Class': 'YourPO', 'Module': __name__, 'YourProperty': 'It is mine.'}
-        j = dumps(e, indent=2, sort_keys=True)
-        o = PersistentObject.from_json(j)
-        self.assertTrue(type(o) is YourPO)
-        oj = o.to_json(indent=2, property_order=_property_order)
-        self.assertEqual(oj, j)
-        self.assertEqual(o.to_serializable(), PersistentObject.from_serializable(e).to_serializable())
-
     def test_modify_obj(self):
         q = MyPO()
         q.modify_object('Property', 'Hello World.')
@@ -365,8 +351,6 @@ class PersistentTest(TestCase):
 
         # no direct circle assignment
         self.assertRaises(ValueError, q.modify_object, 'MyProperty', q)
-
-
 
     def test_modify_factory_obj(self):
         class MyFactoryObject(FactoryObject):
@@ -727,6 +711,20 @@ class VisibleTest(TestCase):
             self.assertEqual(unicum_json_2, unicum_json_2)
             self.assertEqual(standard_json, standard_json_2)
 
+    def test_json_1(self):
+        e = {'Class': 'VisibleObject', 'Module': 'unicum.visibleobject'}
+        j = dumps(e)
+        o = VisibleObject.from_json(j)
+        self.assertEqual(type(o), VisibleObject)
+
+        e = {'Name': 'my vo', 'Class': 'MyVO', 'Module': __name__, 'StrProp': 'It is mine.'}
+        j = dumps(e, indent=2, sort_keys=True)
+        o = VisibleObject.from_json(j)
+        self.assertTrue(type(o) is MyVO)
+        oj = o.to_json(indent=2, property_order=sorted(e.keys()))
+        self.assertEqual(oj, j)
+        self.assertEqual(o.to_serializable(), VisibleObject.from_serializable(e).to_serializable())
+
 
 class TestVisibleObject(VisibleObject):
 
@@ -741,9 +739,9 @@ class SessionTest(TestCase):
     def test_session(self):
         my_session_id = 'my session'
         my_object_name = 'my object'
-        handler = SessionHandler()
+        handler = SessionHandler('unittests', 'TestVisibleObject')
         self.assertFalse(handler.validate_session(my_session_id))
-        session_id = handler.start_session(my_session_id, 'unittests', 'TestVisibleObject')
+        session_id = handler.start_session(my_session_id)
         self.assertEqual(session_id, my_session_id)
         self.assertTrue(handler.validate_session(session_id))
         self.assertTrue(handler.call_session(session_id, 'create', {'name': my_object_name, 'register_flag': True} ))
