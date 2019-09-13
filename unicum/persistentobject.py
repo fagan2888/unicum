@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-#  unicum
-#  -------------
-#  Simple object cache and __factory.
-#
-#  Author:  pbrisk <pbrisk_at_github@icloud.com>
-#  Copyright: 2016, 2017 Deutsche Postbank AG
-#  Website: https://github.com/pbrisk/unicum
-#  License: APACHE Version 2 License (see LICENSE file)
+# unicum
+# ------
+# Python library for simple object cache and factory.
+# 
+# Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
+# Version:  0.3, copyright Friday, 13 September 2019
+# Website:  https://github.com/sonntagsgesicht/unicum
+# License:  Apache License 2.0 (see LICENSE file)
 
 
 import datetime
@@ -315,6 +315,8 @@ class AttributeList(list):
                 iterable = [self._object_from_serializable(x, keys) for x in iterable]
             elif all([type(x) is dict for x in iterable]):  # iterable is list of dict of object properties
                 iterable = [self._object_from_serializable(x) for x in iterable]
+            elif all([type(x) is str for x in iterable]):  # iterable is list of str of object names
+                iterable = [self._object_type(x) for x in iterable]
             # validate objects
             for x in iterable:
                 self._validate(x)

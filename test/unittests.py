@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 
-#  unicum
-#  ------------
-#  Simple object cache and __factory.
-#
-#  Author:  pbrisk <pbrisk_at_github@icloud.com>
-#  Copyright: 2016, 2017 Deutsche Postbank AG
-#  Website: https://github.com/pbrisk/unicum
-#  License: APACHE Version 2 License (see LICENSE file)
+# unicum
+# ------
+# Python library for simple object cache and factory.
+# 
+# Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
+# Version:  0.3, copyright Friday, 13 September 2019
+# Website:  https://github.com/sonntagsgesicht/unicum
+# License:  Apache License 2.0 (see LICENSE file)
+
+
 import logging
+import sys
+
+sys.path.append('..')
 
 from datetime import datetime
 from json import dumps, loads, JSONEncoder
@@ -20,6 +25,7 @@ from unicum import FactoryObject, ObjectList, LinkedObject
 from unicum import PersistentObject, PersistentList, PersistentDict, AttributeList, UnicumJSONEncoder
 from unicum import VisibleObject, VisibleAttributeList
 from unicum import DataRange
+from unicum import SessionHandler
 
 _property_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
 
@@ -720,6 +726,42 @@ class VisibleTest(TestCase):
             standard_json_2 = dumps(MyVO.from_json(unicum_json).to_serializable(), indent=i)
             self.assertEqual(unicum_json_2, unicum_json_2)
             self.assertEqual(standard_json, standard_json_2)
+
+
+class TestVisibleObject(VisibleObject):
+
+    def __init__(self, *args, **kwargs):
+        super(TestVisibleObject, self).__init__(*args, **kwargs)
+        self._folder_ = ''
+        self._float_ = 0.
+
+
+class SessionTest(TestCase):
+
+    def test_session(self):
+        my_session_id = 'my session'
+        my_object_name = 'my object'
+        handler = SessionHandler()
+        self.assertFalse(handler.validate_session(my_session_id))
+        session_id = handler.start_session(my_session_id, 'unittests', 'TestVisibleObject')
+        self.assertEqual(session_id, my_session_id)
+        self.assertTrue(handler.validate_session(session_id))
+        self.assertTrue(handler.call_session(session_id, 'create', {'name': my_object_name, 'register_flag': True} ))
+
+        rng = handler.call_session(session_id, 'to_range', {'self': my_object_name, 'all_properties_flag': True})
+        self.assertEqual('Name', rng[0][0])
+        self.assertEqual(my_object_name, rng[0][1])
+        self.assertEqual('Class', rng[1][0])
+        self.assertEqual('TestVisibleObject', rng[1][1])
+
+        json = handler.call_session(session_id, 'to_json', {'self': my_object_name, 'all_properties_flag': True})
+        self.assertTrue(isinstance(json, str))
+        d = loads(json)
+        self.assertEqual(d['Name'], my_object_name)
+        self.assertEqual(d['Class'], 'TestVisibleObject')
+
+        self.assertTrue(handler.validate_session(session_id))
+        handler.stop_session(session_id)
 
 
 if __name__ == '__main__':

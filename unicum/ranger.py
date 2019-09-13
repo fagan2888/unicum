@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+
+# unicum
+# ------
+# Python library for simple object cache and factory.
+# 
+# Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
+# Version:  0.3, copyright Friday, 13 September 2019
+# Website:  https://github.com/sonntagsgesicht/unicum
+# License:  Apache License 2.0 (see LICENSE file)
+
+
 import json
 
 
