@@ -12,14 +12,17 @@
 
 import logging
 import sys
-
-sys.path.append('..')
+import os
 
 from datetime import datetime
 from json import dumps, loads, JSONEncoder
 from copy import copy, deepcopy
 from unittest import TestCase, TestLoader, TextTestRunner
 from os import getcwd
+
+sys.path.append('.')
+sys.path.append('..')
+
 from unicum import SingletonObject
 from unicum import FactoryObject, ObjectList, LinkedObject
 from unicum import PersistentObject, PersistentList, PersistentDict, AttributeList, UnicumJSONEncoder
@@ -29,7 +32,17 @@ from unicum import SessionHandler
 
 _property_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
 
-logging.basicConfig()
+#logging.basicConfig()
+
+
+def _silent(func, *args, **kwargs):
+    _stout = sys.stdout
+    sys.stdout = open(os.devnull, 'w')
+    _res = func(*args, **kwargs)
+    sys.stdout.close()
+    sys.stdout = _stout
+    return _res
+
 
 class _TestDummy(object):
     pass
