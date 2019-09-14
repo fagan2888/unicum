@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -31,6 +31,7 @@ class FactoryType(type):
 
 class FactoryObject(object, metaclass=FactoryType):
     """ Objects identified by name """
+    # __metaclass__ = FactoryType  # to keep python 2.7 would require str vs. unicode battle for json, too :-(
     __factory = dict()
 
     def __init__(self, *args, **kwargs):
