@@ -105,18 +105,29 @@ if __name__ == '__main__':
     import requests
     from _thread import start_new_thread
 
-
-
+    ################################################
     # start server at http://127.0.0.1:64001
+    ################################################
+
     url, port = '127.0.0.1', '64001'
-    base_url = 'http://%s:%s/' % (url, port)
     start_new_thread(DemoServer(SessionHandler('demo_server', 'DemoObject')).run, (url, port))
 
+    ################################################
     # start session
-    session_id = requests.get(url=base_url)
-    url = base_url + session_id.text
+    ################################################
 
-    # call session to create object
+    base_url = 'http://%s:%s/' % (url, port)
+    session_id = requests.get(url=base_url)
+
+    ################################################
+    # call session
+    ################################################
+
+    # ----------------------------------------------
+    # create object
+    # ----------------------------------------------
+
+    url = base_url + session_id.text
     name = 'MyName'
     folder = 'MyFolder'
     res = requests.get(
@@ -127,7 +138,10 @@ if __name__ == '__main__':
         })
     assert res.text == name
 
+    # ----------------------------------------------
     # modify object
+    # ----------------------------------------------
+
     res = requests.get(
         url=url + '/modify_object',
         params={
@@ -146,7 +160,10 @@ if __name__ == '__main__':
         })
     assert res.text == name
 
-    # read properties
+    # ----------------------------------------------
+    # get properties
+    # ----------------------------------------------
+
     res = requests.get(
         url=url + '/get_property',
         params={
@@ -171,8 +188,14 @@ if __name__ == '__main__':
         })
     assert abs(float(res.text) - 123.321) < 1e-10
 
+    ################################################
     # close session
+    ################################################
+
     session_id = requests.delete(url=url)
 
+    ################################################
     # stop server
+    ################################################
+
     requests.delete(url=base_url)

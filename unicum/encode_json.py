@@ -15,18 +15,20 @@ from json.encoder import encode_basestring_ascii, encode_basestring, INFINITY
 
 from .datarange import DataRange
 from .persistentobject import AttributeList
+from .factoryobject import ObjectList
 
 FLOAT_REPR = float.__repr__
 
 
 class UnicumJSONEncoder(JSONEncoder):
-    def __init__(self, key_order=list(), *args, **kwargs):
+    def __init__(self, key_order=list(), all_properties_flag=False, *args, **kwargs):
         self._order = key_order
+        self._all_properties = all_properties_flag
         super(UnicumJSONEncoder, self).__init__(*args, **kwargs)
 
     def default(self, obj, level=0):
         if hasattr(obj, 'to_serializable'):
-            return obj.to_serializable(recursive=False, level=level)
+            return obj.to_serializable(all_properties_flag=self._all_properties, recursive=False, level=level)
         else:
             return super(UnicumJSONEncoder, self).default(obj)
 
@@ -99,7 +101,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                      long=int,
                      tuple=tuple,
                      ):
-    def _iterencode_list(lst, _current_indent_level):
+    def _iterencode_list(lst, _current_indent_level, level=0):
         if not lst:
             yield '[]'
             return
@@ -144,7 +146,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 elif isinstance(value, dict):
                     chunks = _iterencode_dict(value, _current_indent_level)
                 else:
-                    chunks = _iterencode(value, _current_indent_level)
+                    chunks = _iterencode(value, _current_indent_level, level=level)
                 for chunk in chunks:
                     yield chunk
         if newline_indent is not None:
@@ -154,7 +156,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if markers is not None:
             del markers[markerid]
 
-    def _iterencode_dict(dct, _current_indent_level):
+    def _iterencode_dict(dct, _current_indent_level, level=0):
         if not dct:
             yield '{}'
             return
@@ -230,12 +232,14 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             else:
                 if isinstance(value, (DataRange, AttributeList)):
                     chunks = _iterencode_data_range(value.to_serializable(_current_indent_level), _current_indent_level)
+                elif isinstance(value, ObjectList):
+                    chunks = _iterencode_list(value, _current_indent_level, level=1)
                 elif isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
                 elif isinstance(value, dict):
                     chunks = _iterencode_dict(value, _current_indent_level)
                 else:
-                    chunks = _iterencode(value, _current_indent_level)
+                    chunks = _iterencode(value, _current_indent_level, level=1)
                 for chunk in chunks:
                     yield chunk
         if newline_indent is not None:
@@ -311,7 +315,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             else:
                 buf = separator
             yield buf
-            chunks = _iterencode(value, _current_indent_level)
+            chunks = _iterencode(value, _current_indent_level, level=1)
             for chunk in chunks:
                 if newline_indent is not None and space:
                     chunk = chunk.rjust(space) + ' '
@@ -337,6 +341,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield _floatstr(o)
         elif isinstance(o, (DataRange, AttributeList)):
             for chunk in _iterencode_data_range(o.to_serializable(_current_indent_level), _current_indent_level):
+                yield chunk
+        elif isinstance(o, ObjectList):
+            for chunk in _iterencode_list(o, _current_indent_level, level=1):
                 yield chunk
         elif isinstance(o, (list, tuple)):
             for chunk in _iterencode_list(o, _current_indent_level):

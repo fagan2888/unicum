@@ -7,10 +7,12 @@ We give a simple example of a everyday network of objects.
 Background is a framework to build a schedule of classes in a school.
 First we introduce **Student**, **Teacher** and **ClassRoom** as basic items.
 
-Then we add container (lists) of them. And finally a **Lesson** as a *struct* with a **Teacher**, a **ClassRoom** and a list of **Student**.
+Then we add container (lists) of them. And finally a **Lesson** as a *struct*
+with a **Teacher**, a **ClassRoom** and a list of **Student**.
 
 A list of **Lesson** gives a **Schedule** and
-lists of **Student**, **Teacher** and **ClassRoom** together with a **schedule** build a **School**.
+lists of **Student**, **Teacher** and **ClassRoom** together
+with a **schedule** build a **School**.
 
 .. see absolute path doc/demo_visible_object.py
 
@@ -27,4 +29,16 @@ The second demo shows how to build a simple web service.
 
 .. include:: ../demo_server.py
    :code: python
+
+
+call service from spread sheet
+------------------------------
+
+.. __: https://github.com/sonntagsgesicht/unicum/raw/master/doc/demo_workbook.xlsm
+
+The third demo is a `demo_workbook.xlsm`__ which shows how call the web service from a spread sheet.
+
+.. see absolute path doc/demo_workbook.xlsm
+
+
 

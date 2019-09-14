@@ -53,6 +53,7 @@ class VisibleObject(FactoryObject, LinkedObject, PersistentObject):
         kwargs['cls'] = kwargs.pop('cls', UnicumJSONEncoder)
         if issubclass(kwargs['cls'], UnicumJSONEncoder):
             kwargs['key_order'] = property_order
+            kwargs['all_properties_flag'] = all_properties_flag
             obj = self
         else:
             obj = self.to_serializable(all_properties_flag=all_properties_flag)
