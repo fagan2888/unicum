@@ -4,9 +4,9 @@ dist/
 *.pyc
 .idea/
 .cache/
-doc/sphinx/_build/
-doc/sphinx/_static/
-doc/sphinx/_templates/
+doc_old/sphinx/_build/
+doc_old/sphinx/_static/
+doc_old/sphinx/_templates/
 .DS_Store
 
 dev.py

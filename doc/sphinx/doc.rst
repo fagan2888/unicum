@@ -1,4 +1,6 @@
 
+.. py:currentmodule:: unicum
+
 -----------------
 API Documentation
 -----------------
@@ -12,60 +14,69 @@ Class List
 .. autosummary::
     :nosignatures:
 
-    singeltonobject.SingeltonObject
-    factoryobject.FactoryType
     factoryobject.FactoryObject
     factoryobject.ObjectList
+
     linkedobject.LinkedObject
+
     persistentobject.PersistentObject
     persistentobject.AttributeList
+
     datarange.DataRange
+
     visibleobject.VisibleObject
     visibleobject.VisibleObjectList
     visibleobject.VisibleAttributeList
     visibleobject.VisibleDataRange
 
+    session.SessionHandler
+
 
 Inheritance Diagram
 ===================
 
-.. inheritance-diagram:: visibleobject
+.. inheritance-diagram:: unicum.visibleobject
 
 
 
 Visible Objects
 ===============
 
-.. automodule:: visibleobject
+.. automodule:: unicum.visibleobject
 
 
+
+SessionHandler
+==============
+
+.. automodule:: unicum.session
+
+
+
+Base Objects
+============
 
 Factory Objects
-===============
+---------------
 
-.. automodule:: factoryobject
+.. automodule:: unicum.factoryobject
 
 
 Linked Objects
-==============
+--------------
 
-.. automodule:: linkedobject
+.. automodule:: unicum.linkedobject
 
 
 Persistent Objects
-==================
+------------------
 
-
-.. automodule:: persistentobject
+.. automodule:: unicum.persistentobject
 
 
 DataRange Object
-================
+----------------
 
-.. automodule:: datarange
+.. automodule:: unicum.datarange
 
 
-Singelton Object
-================
-
-.. automodule:: singletonobject

@@ -1,17 +1,34 @@
-from json import JSONEncoder
-from json.encoder import encode_basestring_ascii, encode_basestring, FLOAT_REPR, INFINITY
+# -*- coding: utf-8 -*-
 
-from datarange import DataRange
+# unicum
+# ------
+# Python library for simple object cache and factory.
+#
+# Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
+# Version:  0.3, copyright Friday, 13 September 2019
+# Website:  https://github.com/sonntagsgesicht/unicum
+# License:  Apache License 2.0 (see LICENSE file)
+
+
+from json import JSONEncoder
+from json.encoder import encode_basestring_ascii, encode_basestring, INFINITY
+
+from .datarange import DataRange
+from .persistentobject import AttributeList
+from .factoryobject import ObjectList
+
+FLOAT_REPR = float.__repr__
 
 
 class UnicumJSONEncoder(JSONEncoder):
-    def __init__(self, key_order=list(), *args, **kwargs):
+    def __init__(self, key_order=list(), all_properties_flag=False, *args, **kwargs):
         self._order = key_order
+        self._all_properties = all_properties_flag
         super(UnicumJSONEncoder, self).__init__(*args, **kwargs)
 
-    def default(self, obj):
+    def default(self, obj, level=0):
         if hasattr(obj, 'to_serializable'):
-            return obj.to_serializable(recursive=False)
+            return obj.to_serializable(all_properties_flag=self._all_properties, recursive=False, level=level)
         else:
             return super(UnicumJSONEncoder, self).default(obj)
 
@@ -33,11 +50,12 @@ class UnicumJSONEncoder(JSONEncoder):
             _encoder = encode_basestring_ascii
         else:
             _encoder = encode_basestring
-        if self.encoding != 'utf-8':
-            def _encoder(o, _orig_encoder=_encoder, _encoding=self.encoding):
-                if isinstance(o, str):
-                    o = o.decode(_encoding)
-                return _orig_encoder(o)
+        # turned off sc
+        # #if self.encoding != 'utf-8':
+        #    def _encoder(o, _orig_encoder=_encoder, _encoding=self.encoding):
+        #        if isinstance(o, str):
+        #            o = o.decode(_encoding)
+        #       return _orig_encoder(o)
 
         def floatstr(o, allow_nan=self.allow_nan,
                      _repr=FLOAT_REPR, _inf=INFINITY, _neginf=-INFINITY):
@@ -73,18 +91,17 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                      _key_separator, _item_separator, _sort_keys, _skipkeys, _one_shot, _key_order,
                      ## HACK: hand-optimized bytecode; turn globals into locals
                      ValueError=ValueError,
-                     basestring=basestring,
                      dict=dict,
                      float=float,
                      id=id,
                      int=int,
                      isinstance=isinstance,
                      list=list,
-                     long=long,
                      str=str,
+                     long=int,
                      tuple=tuple,
                      ):
-    def _iterencode_list(lst, _current_indent_level):
+    def _iterencode_list(lst, _current_indent_level, level=0):
         if not lst:
             yield '[]'
             return
@@ -108,7 +125,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 first = False
             else:
                 buf = separator
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 yield buf + _encoder(value)
             elif value is None:
                 yield buf + 'null'
@@ -116,20 +133,20 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 yield buf + 'true'
             elif value is False:
                 yield buf + 'false'
-            elif isinstance(value, (int, long)):
+            elif isinstance(value, int):
                 yield buf + str(value)
             elif isinstance(value, float):
                 yield buf + _floatstr(value)
             else:
                 yield buf
-                if isinstance(value, DataRange):
+                if isinstance(value, (DataRange, AttributeList)):
                     chunks = _iterencode_data_range(value.to_serializable(_current_indent_level), _current_indent_level)
                 elif isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
                 elif isinstance(value, dict):
                     chunks = _iterencode_dict(value, _current_indent_level)
                 else:
-                    chunks = _iterencode(value, _current_indent_level)
+                    chunks = _iterencode(value, _current_indent_level, level=level)
                 for chunk in chunks:
                     yield chunk
         if newline_indent is not None:
@@ -139,11 +156,11 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if markers is not None:
             del markers[markerid]
 
-    def _iterencode_dict(dct, _current_indent_level):
+    def _iterencode_dict(dct, _current_indent_level, level=0):
         if not dct:
             yield '{}'
             return
-        if isinstance(dct, DataRange):
+        if isinstance(dct, (DataRange, AttributeList)):
             _iterencode_data_range(dct, _current_indent_level)
         if markers is not None:
             markerid = id(dct)
@@ -161,9 +178,9 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             item_separator = _item_separator
         first = True
         if _sort_keys:
-            items = sorted(dct.items(), key=lambda kv: kv[0])
+            items = sorted(list(dct.items()), key=lambda kv: kv[0])
         else:
-            items = dct.iteritems()
+            items = iter(dct.items())
         if _key_order:
             old_items = list(items)
             new_items = list()
@@ -176,7 +193,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                     new_items.append((k, v))
             items = new_items
         for key, value in items:
-            if isinstance(key, basestring):
+            if isinstance(key, str):
                 pass
             # JavaScript is weakly typed for these, so it makes sense to
             # also allow them.  Many encoders seem to do something like this.
@@ -188,7 +205,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 key = 'false'
             elif key is None:
                 key = 'null'
-            elif isinstance(key, (int, long)):
+            elif isinstance(key, int):
                 key = str(key)
             elif _skipkeys:
                 continue
@@ -200,7 +217,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 yield item_separator
             yield _encoder(key)
             yield _key_separator
-            if isinstance(value, basestring):
+            if isinstance(value, str):
                 yield _encoder(value)
             elif value is None:
                 yield 'null'
@@ -208,19 +225,21 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 yield 'true'
             elif value is False:
                 yield 'false'
-            elif isinstance(value, (int, long)):
+            elif isinstance(value, int):
                 yield str(value)
             elif isinstance(value, float):
                 yield _floatstr(value)
             else:
-                if isinstance(value, DataRange):
+                if isinstance(value, (DataRange, AttributeList)):
                     chunks = _iterencode_data_range(value.to_serializable(_current_indent_level), _current_indent_level)
+                elif isinstance(value, ObjectList):
+                    chunks = _iterencode_list(value, _current_indent_level, level=1)
                 elif isinstance(value, (list, tuple)):
                     chunks = _iterencode_list(value, _current_indent_level)
                 elif isinstance(value, dict):
                     chunks = _iterencode_dict(value, _current_indent_level)
                 else:
-                    chunks = _iterencode(value, _current_indent_level)
+                    chunks = _iterencode(value, _current_indent_level, level=1)
                 for chunk in chunks:
                     yield chunk
         if newline_indent is not None:
@@ -252,7 +271,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         # simple gathering of cell space
         # cell_space = max(max(map(len, _iterencode_data_range_line(item, 0, 0))) for item in rng)
         # col specific gathering of cell space
-        cell_space = list(max(map(len, _iterencode_data_range_line(item, 0, 0))) for item in zip(*rng))
+        cell_space = list(max(list(map(len, _iterencode_data_range_line(item, 0, 0)))) for item in zip(*rng))
         for value in rng:
             if first:
                 first = False
@@ -296,7 +315,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             else:
                 buf = separator
             yield buf
-            chunks = _iterencode(value, _current_indent_level)
+            chunks = _iterencode(value, _current_indent_level, level=1)
             for chunk in chunks:
                 if newline_indent is not None and space:
                     chunk = chunk.rjust(space) + ' '
@@ -307,8 +326,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if markers is not None:
             del markers[markerid]
 
-    def _iterencode(o, _current_indent_level):
-        if isinstance(o, basestring):
+    def _iterencode(o, _current_indent_level, level=0):
+        if isinstance(o, str):
             yield _encoder(o)
         elif o is None:
             yield 'null'
@@ -316,12 +335,15 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             yield 'true'
         elif o is False:
             yield 'false'
-        elif isinstance(o, (int, long)):
+        elif isinstance(o, int):
             yield str(o)
         elif isinstance(o, float):
             yield _floatstr(o)
-        elif isinstance(o, DataRange):
+        elif isinstance(o, (DataRange, AttributeList)):
             for chunk in _iterencode_data_range(o.to_serializable(_current_indent_level), _current_indent_level):
+                yield chunk
+        elif isinstance(o, ObjectList):
+            for chunk in _iterencode_list(o, _current_indent_level, level=1):
                 yield chunk
         elif isinstance(o, (list, tuple)):
             for chunk in _iterencode_list(o, _current_indent_level):
@@ -335,8 +357,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
                 if markerid in markers:
                     raise ValueError("Circular reference detected")
                 markers[markerid] = o
-            o = _default(o)
-            for chunk in _iterencode(o, _current_indent_level):
+            o = _default(o, level=level)
+            for chunk in _iterencode(o, _current_indent_level, level=1):
                 yield chunk
             if markers is not None:
                 del markers[markerid]

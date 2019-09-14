@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-#  unicum
-#  ------------
-#  Simple object cache and __factory.
-#
-#  Author:  pbrisk <pbrisk_at_github@icloud.com>
-#  Copyright: 2016, 2017 Deutsche Postbank AG
-#  Website: https://github.com/pbrisk/unicum
-#  License: APACHE Version 2 License (see LICENSE file)
+# unicum
+# ------
+# Python library for simple object cache and factory.
+# 
+# Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
+# Version:  0.3, copyright Friday, 13 September 2019
+# Website:  https://github.com/sonntagsgesicht/unicum
+# License:  Apache License 2.0 (see LICENSE file)
 
 
 import json
@@ -31,8 +31,8 @@ def parse_json_str(json_str):
 def decode_list(data):
     rv = []
     for item in data:
-        if isinstance(item, unicode):
-            item = item.encode('utf-8')
+        if isinstance(item, str):
+            item = item#.encode('utf-8')
             if type(item) == type(""):
                 if not item.isdigit():
                     try:
@@ -49,11 +49,15 @@ def decode_list(data):
 
 def decode_dict(data):
     rv = {}
-    for key, value in data.iteritems():
-        if isinstance(key, unicode):
-            key = key.encode('utf-8')
-        if isinstance(value, unicode):
-            value = value.encode('utf-8')
+    for key, value in data.items():
+        if isinstance(key, str):
+            pass
+            # disabled for python 3
+            #key = key.encode('utf-8').decode('ascii')
+        if isinstance(value, str):
+            pass
+            # disabled for python 3
+            # value = value.encode('utf-8').decode('ascii')
         elif isinstance(value, list):
             value = decode_list(value)
         elif isinstance(value, dict):

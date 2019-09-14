@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+
+# unicum
+# ------
+# Python library for simple object cache and factory.
+# 
+# Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
+# Version:  0.3, copyright Friday, 13 September 2019
+# Website:  https://github.com/sonntagsgesicht/unicum
+# License:  Apache License 2.0 (see LICENSE file)
+
+
 import json
 
 
@@ -50,7 +62,7 @@ def dict_from_range(range_list):
             key_value_dict[key] = value
 
     # strip values
-    for key, value in key_value_dict.iteritems():
+    for key, value in key_value_dict.items():
         # could be : a) list -> simple property or b) nested list -> range property
         if value:
             if isinstance(value[0], (list, tuple)):

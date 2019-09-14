@@ -1,14 +1,19 @@
 # -*- coding: utf-8 -*-
 
-#  unicum
-#  ------------
-#  Simple object cache and __factory.
+# unicum
+# ------
+# Python library for simple object cache and factory.
 #
-#  Author:  pbrisk <pbrisk_at_github@icloud.com>
-#  Copyright: 2016, 2017 Deutsche Postbank AG
-#  Website: https://github.com/pbrisk/unicum
-#  License: APACHE Version 2 License (see LICENSE file)
+# Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
+# Version:  0.3, copyright Friday, 13 September 2019
+# Website:  https://github.com/sonntagsgesicht/unicum
+# License:  Apache License 2.0 (see LICENSE file)
 
+
+import logging
+import sys
+
+sys.path.append('..')
 
 from datetime import datetime
 from json import dumps, loads, JSONEncoder
@@ -20,17 +25,19 @@ from unicum import FactoryObject, ObjectList, LinkedObject
 from unicum import PersistentObject, PersistentList, PersistentDict, AttributeList, UnicumJSONEncoder
 from unicum import VisibleObject, VisibleAttributeList
 from unicum import DataRange
+from unicum import SessionHandler
 
 _property_order = ["Name", "Class", "Module", "Currency", "Origin", "Notional"]
 
+logging.basicConfig()
 
-class TestDummy(object):
+class _TestDummy(object):
     pass
 
 
 class SingletonTest(TestCase):
     def setUp(self):
-        class SingeltonDummy(TestDummy, SingletonObject):
+        class SingeltonDummy(_TestDummy, SingletonObject):
             pass
 
         self.Constant = SingeltonDummy
@@ -46,13 +53,8 @@ class FactoryTest(TestCase):
         class Currency(FactoryObject):
             __factory = dict()
 
-            def __new__(cls, *args, **kwargs):
-                if not args:
-                    return super(Currency, cls).__new__(cls, cls.__name__)
-                else:
-                    return super(Currency, cls).__new__(cls, *args)
-
             def __init__(self, name=None):
+                name = self.__class__.__name__ if name is None else name
                 super(Currency, self).__init__(name)
                 self._vp_ = self.__class__.__name__
 
@@ -87,12 +89,12 @@ class FactoryTest(TestCase):
         class Interpolation(FactoryObject):
             __factory = dict()
 
-        class FactoryDummy(TestDummy, Interpolation):
+        class FactoryDummy(_TestDummy, Interpolation):
             pass
 
         self.FactoryDummy = FactoryDummy
 
-        class AnotherFactoryDummy(TestDummy, Interpolation):
+        class AnotherFactoryDummy(_TestDummy, Interpolation):
             pass
 
         self.AnotherFactoryDummy = AnotherFactoryDummy
@@ -129,18 +131,18 @@ class FactoryTest(TestCase):
         self.assertTrue(eur is feur)
         self.assertTrue(fEUR is feur)
 
-        for x, y in zip(self.EUR.values(), self.USD.values()):
+        for x, y in zip(list(self.EUR.values()), list(self.USD.values())):
             self.assertTrue(x is y)
 
-        for ek, (k, v), ev in zip(self.EUR.keys(), self.USD.items(), self.Currency.values()):
+        for ek, (k, v), ev in zip(list(self.EUR.keys()), list(self.USD.items()), list(self.Currency.values())):
             self.assertTrue(ek is k)
             self.assertTrue(v is ev)
 
         self.Currency('EUR').remove()
-        self.assertTrue(len(self.EUR.items()) is 1)
-        self.assertTrue(self.EUR.values()[0] is usd)
-        self.assertTrue(usd in self.Currency.values())
-        self.assertTrue(eur not in self.Currency.values())
+        self.assertTrue(len(list(self.EUR.items())) is 1)
+        self.assertTrue(list(self.EUR.values())[0] is usd)
+        self.assertTrue(usd in list(self.Currency.values()))
+        self.assertTrue(eur not in list(self.Currency.values()))
 
         # NamedObject -> create item by self.__class__(obj_name)
         # NamedObject by SingletonObject
@@ -163,11 +165,11 @@ class FactoryTest(TestCase):
     def test_register(self):
         # test FactoryObject
         eur = self.EUR().register()
-        self.assertTrue('EUR' in self.EUR.keys())
+        self.assertTrue('EUR' in list(self.EUR.keys()))
 
         names = 'eur', 'Eur', 'EURO', 'euro'
         self.EUR().register(*names)
-        keys = self.EUR.keys()
+        keys = list(self.EUR.keys())
         for n in names:
             self.assertTrue(n in keys)
 
@@ -175,11 +177,11 @@ class FactoryTest(TestCase):
         usd = self.USD().register()
         const = self.FactoryDummy().register()
 
-        self.assertTrue(usd in self.USD.values())
-        self.assertTrue(usd not in self.FactoryDummy.values())
+        self.assertTrue(usd in list(self.USD.values()))
+        self.assertTrue(usd not in list(self.FactoryDummy.values()))
 
-        self.assertTrue(const not in self.USD.values())
-        self.assertTrue(const in self.FactoryDummy.values())
+        self.assertTrue(const not in list(self.USD.values()))
+        self.assertTrue(const in list(self.FactoryDummy.values()))
 
     def test_objectList(self):
         eur, usd = self.EUR().register(), self.USD().register()
@@ -226,17 +228,18 @@ class FactoryTest(TestCase):
         o.extend(['eur'])
         self.assertTrue(eur in o)
         o.pop(0)
-        o[0:0] = [eur]
-        self.assertTrue(eur in o)
-        o.pop(0)
-        o[0:0] = ['eur']
-        self.assertTrue(eur in o)
+        # slices removed with migration to python 3
+        # o[0:0] = [eur]
+        # self.assertTrue(eur in o)
+        # o.pop(0)
+        # o[0:0] = ['eur']
+        # self.assertTrue(eur in o)
 
         b = o + ['eur']
         self.assertTrue(isinstance(b, self.CurrencyList))
         self.assertTrue(eur in b)
 
-        b = ['eur'] + o
+        b = [eur] + o
         self.assertTrue(not isinstance(b, ObjectList))
         self.assertTrue(eur in b)
 
@@ -338,22 +341,9 @@ class PersistentTest(TestCase):
         e = {'Class': 'YourPO', 'Module': __name__}
         self.assertTrue(MyPO.from_serializable(e).to_serializable()['Class'] == 'YourPO')
 
-    def test_json(self):
-        e = {'Class': 'PersistentObject'}
-        j = dumps(e)
-        o = PersistentObject.from_json(j)
-        self.assertEqual(type(o), PersistentObject)
-
-        e = {'Class': 'YourPO', 'Module': __name__, 'YourProperty': 'It is mine.'}
-        j = dumps(e, indent=2, sort_keys=True)
-        o = PersistentObject.from_json(j)
-        self.assertTrue(type(o) is YourPO)
-        oj = o.to_json(indent=2, property_order=_property_order)
-        self.assertEqual(oj, j)
-        self.assertEqual(o.to_serializable(), PersistentObject.from_serializable(e).to_serializable())
-
     def test_modify_obj(self):
         q = MyPO()
+        q.modify_object('Property', 'Hello World.')
         q.modify_object('MyProperty', 'Hello World.')
         self.assertTrue(q._my_property_ == 'Hello World.')
         d = q.to_serializable()
@@ -419,10 +409,11 @@ class PersistentTest(TestCase):
         a.pop(-1)
         self.assertTrue(m not in a)
 
-        a[0:0] = [m]
-        self.assertTrue(m in a)
-        a.pop(0)
-        self.assertTrue(m not in a)
+        # slices removed with migration to python 3
+        # a[0:0] = [m]
+        # self.assertTrue(m in a)
+        # a.pop(0)
+        # self.assertTrue(m not in a)
 
         b = a + [m]
         self.assertTrue(isinstance(b, AttributeList))
@@ -433,7 +424,7 @@ class PersistentTest(TestCase):
         self.assertTrue(m in b)
 
     def test_persistentlist(self):
-        l = PersistentList(range(10))
+        l = PersistentList(list(range(10)))
         l.append(MyPO())
         s = l.to_serializable()
         self.assertNotEqual(l, s)
@@ -462,6 +453,13 @@ class DataRangeTest(TestCase):
         z = 'Z', 7, 8, 9, 10
         self.datarange = DataRange([h, x, y, z])
         pass
+
+    def test_init(self):
+        new_datarange = DataRange(self.datarange.to_serializable())
+        self.assertEqual(self.datarange.to_serializable(), new_datarange.to_serializable())
+
+        new_datarange = DataRange(self.datarange)
+        self.assertEqual(self.datarange.to_serializable(), new_datarange.to_serializable())
 
     def test_keys(self):
         self.assertEqual(self.datarange.col_keys(), ['A', 'B', 'C', 'D'])
@@ -501,18 +499,18 @@ class DataRangeTest(TestCase):
         self.assertTrue('U' in self.datarange.row_keys())
 
     def test_append(self):
-        self.datarange.append('W', range(4))
-        l = lambda: self.datarange.row_append('W', range(4))
+        self.datarange.append('W', list(range(4)))
+        l = lambda: self.datarange.row_append('W', list(range(4)))
         self.assertRaises(KeyError, l)
         self.assertEqual(len(self.datarange), 4)
         self.assertEqual(self.datarange.row_keys()[-1], 'W')
-        self.assertEqual(self.datarange.row('W'), range(4))
+        self.assertEqual(self.datarange.row('W'), list(range(4)))
 
-        self.datarange.row_append('U', range(2, 6))
-        self.assertEqual(self.datarange.row('U'), range(2, 6))
+        self.datarange.row_append('U', list(range(2, 6)))
+        self.assertEqual(self.datarange.row('U'), list(range(2, 6)))
 
-        self.datarange.col_append('T', range(5))
-        self.assertEqual(self.datarange.col('T'), range(5))
+        self.datarange.col_append('T', list(range(5)))
+        self.assertEqual(self.datarange.col('T'), list(range(5)))
 
     def test_copy(self):
         self.assertEqual(self.datarange, copy(self.datarange))
@@ -644,7 +642,7 @@ class VisibleTest(TestCase):
         self.assertEqual(dic['AttrListProp'], obj.attr_list.to_serializable(1))
         # test DataRange
         self.assertEqual(dic['DataRangeProp'], obj.datarange.to_serializable(1))
-        for k, v in obj.to_serializable().items():
+        for k, v in list(obj.to_serializable().items()):
             # print k.ljust(16), str(type(v)).ljust(20), v
             self.assertTrue(isinstance(v, (int, float, str, type(None), list)))
         self.assertTrue(obj.to_json())
@@ -692,7 +690,7 @@ class VisibleTest(TestCase):
         self.assertEqual(o, VisibleObject('ME'))
 
     def test_json(self):
-        objs = [1, 2, 3], [1e-1, 1e-1, 1e1, 1e3], 0.12345, 99, 'abc', None, long(12345), {'A':3, 3:4, 'a':'B'}
+        objs = [1, 2, 3], [1e-1, 1e-1, 1e1, 1e3], 0.12345, 99, 'abc', None, int(12345), {'A':3, 3:4, 'a':'B'}
         for i in [None, 0, 1, 2]:
             for o in objs:
                 self.assertEqual(UnicumJSONEncoder(indent=i).encode(o), JSONEncoder(indent=i).encode(o))
@@ -713,6 +711,56 @@ class VisibleTest(TestCase):
             self.assertEqual(unicum_json_2, unicum_json_2)
             self.assertEqual(standard_json, standard_json_2)
 
+    def test_json_1(self):
+        e = {'Class': 'VisibleObject', 'Module': 'unicum.visibleobject'}
+        j = dumps(e)
+        o = VisibleObject.from_json(j)
+        self.assertEqual(type(o), VisibleObject)
+
+        e = {'Name': 'my vo', 'Class': 'MyVO', 'Module': __name__, 'StrProp': 'It is mine.'}
+        j = dumps(e, indent=2, sort_keys=True)
+        o = VisibleObject.from_json(j)
+        self.assertTrue(type(o) is MyVO)
+        oj = o.to_json(indent=2, property_order=sorted(e.keys()))
+        self.assertEqual(oj, j)
+        self.assertEqual(o.to_serializable(), VisibleObject.from_serializable(e).to_serializable())
+
+
+class TestVisibleObject(VisibleObject):
+
+    def __init__(self, *args, **kwargs):
+        super(TestVisibleObject, self).__init__(*args, **kwargs)
+        self._folder_ = ''
+        self._float_ = 0.
+
+
+class SessionTest(TestCase):
+
+    def test_session(self):
+        my_session_id = 'my session'
+        my_object_name = 'my object'
+        handler = SessionHandler('unittests', 'TestVisibleObject')
+        self.assertFalse(handler.validate_session(my_session_id))
+        session_id = handler.start_session(my_session_id)
+        self.assertEqual(session_id, my_session_id)
+        self.assertTrue(handler.validate_session(session_id))
+        self.assertTrue(handler.call_session(session_id, 'create', {'name': my_object_name, 'register_flag': True} ))
+
+        rng = handler.call_session(session_id, 'to_range', {'self': my_object_name, 'all_properties_flag': True})
+        self.assertEqual('Name', rng[0][0])
+        self.assertEqual(my_object_name, rng[0][1])
+        self.assertEqual('Class', rng[1][0])
+        self.assertEqual('TestVisibleObject', rng[1][1])
+
+        json = handler.call_session(session_id, 'to_json', {'self': my_object_name, 'all_properties_flag': True})
+        self.assertTrue(isinstance(json, str))
+        d = loads(json)
+        self.assertEqual(d['Name'], my_object_name)
+        self.assertEqual(d['Class'], 'TestVisibleObject')
+
+        self.assertTrue(handler.validate_session(session_id))
+        handler.stop_session(session_id)
+
 
 if __name__ == '__main__':
     import sys
@@ -722,9 +770,9 @@ if __name__ == '__main__':
     print('')
     print('======================================================================')
     print('')
-    print('run %s' % __file__)
-    print('in %s' % getcwd())
-    print('started  at %s' % str(start_time))
+    print(('run %s' % __file__))
+    print(('in %s' % getcwd()))
+    print(('started  at %s' % str(start_time)))
     print('')
     print('----------------------------------------------------------------------')
     print('')
@@ -736,10 +784,10 @@ if __name__ == '__main__':
     print('')
     print('======================================================================')
     print('')
-    print('ran %s' % __file__)
-    print('in %s' % getcwd())
-    print('started  at %s' % str(start_time))
-    print('finished at %s' % str(datetime.now()))
+    print(('ran %s' % __file__))
+    print(('in %s' % getcwd()))
+    print(('started  at %s' % str(start_time)))
+    print(('finished at %s' % str(datetime.now())))
     print('')
     print('----------------------------------------------------------------------')
     print('')

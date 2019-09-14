@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
 
-#  unicum
-#  -------------
-#  Simple object cache and __factory.
+# unicum
+# ------
+# Python library for simple object cache and factory.
 #
-#  Author:  pbrisk <pbrisk_at_github@icloud.com>
-#  Copyright: 2016, 2017 Deutsche Postbank AG
-#  Website: https://github.com/pbrisk/unicum
-#  License: APACHE Version 2 License (see LICENSE file)
+# Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
+# Version:  0.3, copyright Friday, 13 September 2019
+# Website:  https://github.com/sonntagsgesicht/unicum
+# License:  Apache License 2.0 (see LICENSE file)
 
 
 import datetime
 import getpass
-import json
-
-from encode_json import UnicumJSONEncoder
-from decode_json import decode_dict as _decode_dict
+import logging
 
 _order = 'Name', 'Class', 'Module'
+_logger = logging.getLogger('unicum')
 
 
 class PersistentObject(object):
@@ -91,7 +89,7 @@ class PersistentObject(object):
         def _get_module(module_name):
             names = module_name.split(".")
             module = __import__(names[0])
-            for i in xrange(1, len(names)):
+            for i in range(1, len(names)):
                 module = getattr(module, names[i])
             return module
 
@@ -105,7 +103,7 @@ class PersistentObject(object):
 
         if not issubclass(class_, PersistentObject):
             t = class_.__name__, PersistentObject.__name__
-            raise TypeError, 'Requested object type %s must be subtype of %s ' % t
+            raise TypeError('Requested object type %s must be subtype of %s ' % t)
 
         # workaround to mimic FactoryType to work well with FactoryObject.
         name = str(args[0]) if args else cls.__name__
@@ -133,14 +131,6 @@ class PersistentObject(object):
         obj.modify_object(object_dict)
         return obj
 
-    @classmethod
-    def from_json(cls, json_str):
-        obj_dict = json.loads(json_str, object_hook=_decode_dict)
-        if isinstance(obj_dict, dict):
-            return cls.from_serializable(obj_dict)
-        else:
-            return [cls.from_serializable(d) for d in obj_dict]
-
     def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         d = dict()
         for a in [a for a in dir(self) if self.__class__._is_visible(a)]:
@@ -148,18 +138,9 @@ class PersistentObject(object):
                 v = getattr(self, a)
                 if recursive:
                     v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
-                    v = v if isinstance(v, (float, int, long, list, dict, type(None))) else str(v)
+                    v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
                 d[self.__class__._from_visible(a)] = v
         return d
-
-    def to_json(self, all_properties_flag=False, property_order=_order, **kwargs):
-        kwargs['cls'] = kwargs.pop('cls', UnicumJSONEncoder)
-        if issubclass(kwargs['cls'], UnicumJSONEncoder):
-            kwargs['key_order'] = property_order
-            obj = self
-        else:
-            obj = self.to_serializable(all_properties_flag=all_properties_flag)
-        return json.dumps(obj, **kwargs)
 
     def modify_object(self, property_name, property_value_variant=None):
         """
@@ -173,8 +154,8 @@ class PersistentObject(object):
         :rtype: unicum.lfojbect.VisibleObject
         """
         if type(property_name) is dict:
-            property_value_variant = property_name.values()
-            property_name = property_name.keys()
+            property_value_variant = list(property_name.values())
+            property_name = list(property_name.keys())
 
         if isinstance(property_name, str):
             property_name, property_value_variant = [property_name], [property_value_variant]
@@ -185,7 +166,8 @@ class PersistentObject(object):
 
         # loop over properties to set
         for n, v in zip(property_name, property_value_variant):
-            self._modify_property(n.encode('ascii','ignore'), v)
+            #self._modify_property(n.encode('ascii','ignore'), v)
+            self._modify_property(n, v)
 
         # rebuild object in order to maintain consistency
         self._rebuild_object()
@@ -194,14 +176,16 @@ class PersistentObject(object):
     def _modify_property(self, property_name, property_value_variant):
         # avoid circles
         if property_value_variant is self:
-            raise ValueError, 'Attributes must not be recursively. Not mapping self to %s.' % property_name
+            msg = 'Attributes must not be recursively. Not mapping self to %s.' % property_name
+            _logger.error(msg)
+            raise ValueError(msg)
 
         # handle not admissible property_name type
         if not isinstance(property_name, str):
             s = str(property_name), type(property_name), self.__class__.__name__
             msg = 'can not handle %s of type %s as a property in object of type %s' % s
-            print(msg)
-            # raise TypeError, msg
+            _logger.warning(msg)
+            # raise TypeError(msg)
             return
 
         # handle not admissible property_name
@@ -209,8 +193,8 @@ class PersistentObject(object):
             if property_name:
                 s = property_name, self.__class__.__name__, str(self)
                 msg = 'property %s in object of type %s not found in %s' % s
-                print(msg)
-                # raise ValueError, msg
+                _logger.warning(msg)
+                # raise ValueError(msg)
                 return
 
         # check type of property_value_variant
@@ -228,14 +212,15 @@ class PersistentObject(object):
 
     def _validate(self, property_name, property_value_variant):
         current_property_value = getattr(self, property_name)
-        if isinstance(current_property_value, str) and isinstance(property_value_variant, unicode):
+        if isinstance(current_property_value, str) and isinstance(property_value_variant, str):
             property_value_variant = property_value_variant.encode('ascii', 'ignore')
         return isinstance(property_value_variant, type(current_property_value))
 
     def _cast(self, property_name, property_value_variant):
         current_property_value = getattr(self, property_name)
-        if isinstance(current_property_value, str) and isinstance(property_value_variant, unicode):
-            property_value_variant = property_value_variant.encode('ascii', 'ignore')
+        if isinstance(current_property_value, str) and isinstance(property_value_variant, str):
+            #property_value_variant = property_value_variant.encode('ascii', 'ignore')
+            property_value_variant = property_value_variant
         return current_property_value.__class__(property_value_variant)
 
     def _rebuild_object(self):
@@ -277,7 +262,7 @@ class PersistentDict(dict):
 
     def to_serializable(self, level=0, all_properties_flag=False, recursive=True):
         r = dict()
-        for k, v in self.items():
+        for k, v in list(self.items()):
             if recursive:
                 v = v if not hasattr(v, 'to_serializable') else v.to_serializable(level + 1, all_properties_flag)
                 v = v if isinstance(v, (float, int, list, dict, type(None))) else str(v)
@@ -294,8 +279,7 @@ class AttributeList(list):
 
     def __init__(self, iterable=None, object_type=PersistentObject, value_types=(float, int, str, type(None))):
         if not issubclass(object_type, PersistentObject):
-            raise TypeError, \
-                'Required object type of AttributeList items must be subtype of %s ' % PersistentObject.__name__
+            raise TypeError('Required object type of AttributeList items must be subtype of %s ' % PersistentObject.__name__)
         self._object_type = object_type
         self._value_types = value_types
         if iterable is None or len(iterable) is 0:  # iterable is None
@@ -306,10 +290,12 @@ class AttributeList(list):
             if all([type(x) is list for x in iterable]):  # iterable is nested list of object properties
                 keys = tuple(iterable.pop(0))  # extract headline of property names
                 if not len(keys) == len(set(keys)):
-                    raise ValueError, 'Properties in AttributeList must be unique'
+                    raise ValueError('Properties in AttributeList must be unique')
                 iterable = [self._object_from_serializable(x, keys) for x in iterable]
             elif all([type(x) is dict for x in iterable]):  # iterable is list of dict of object properties
                 iterable = [self._object_from_serializable(x) for x in iterable]
+            elif all([type(x) is str for x in iterable]):  # iterable is list of str of object names
+                iterable = [self._object_type(x) for x in iterable]
             # validate objects
             for x in iterable:
                 self._validate(x)
@@ -323,21 +309,20 @@ class AttributeList(list):
 
     def _object_from_serializable(self, x, keys=None):
         if isinstance(x, list):
-            x = dict(zip(keys, x))
+            x = dict(list(zip(keys, x)))
         if isinstance(x, dict):
             x = self._object_type.from_serializable(x)
         return x if isinstance(x, self._object_type) else self._object_type(x)
 
     def _validate(self, x):
         if not isinstance(x, self._object_type):
-            raise TypeError, 'All items in this AttributeList must have subtype of %s.' % self._object_type.__name__
-        for k, v in x.to_serializable().items():
+            raise TypeError('All items in this AttributeList must have subtype of %s.' % self._object_type.__name__)
+        for k, v in list(x.to_serializable().items()):
             if not isinstance(v, self._value_types):
                 s = ', '.join([str(t) for t in self._value_types])
                 t = type(v)
-                raise TypeError, \
-                    'All properties of item in this AttributeList must have type ' \
-                    'of either one of %s but not %s as seen for property %s' % (s, t, k)
+                raise TypeError('All properties of item in this AttributeList must have type ' \
+                    'of either one of %s but not %s as seen for property %s' % (s, t, k))
 
     def __iter__(self):
         return super(AttributeList, self).__iter__()
@@ -413,7 +398,7 @@ class AttributeList(list):
         if level:
             return sorted(set().union(*[x.to_serializable(level, all_properties_flag) for x in self]))
         else:
-            return sorted(set().union(*[x.to_serializable(level, all_properties_flag).keys() for x in self]))
+            return sorted(set().union(*[list(x.to_serializable(level, all_properties_flag).keys()) for x in self]))
 
     def values(self, level=0, all_properties_flag=False):
         keys = self.keys(level, all_properties_flag)
@@ -424,4 +409,4 @@ class AttributeList(list):
             return [[o.get(k) for k in keys] for o in dicts]
 
     def items(self, level=0, all_properties_flag=False):
-        return zip(self.keys(level, all_properties_flag), self.items(level, all_properties_flag))
+        return list(zip(self.keys(level, all_properties_flag), self.items(level, all_properties_flag)))
