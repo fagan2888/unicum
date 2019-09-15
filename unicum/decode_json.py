@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -13,32 +13,35 @@
 import json
 
 
+# Allows isinstance(foo, basestring) to work in Python 3
+try:
+    basestring
+except NameError:
+    basestring = str
+
+
 def load_json_dicts(file_name):
-    """
-    Loads the json dictionary from the given file.
-    """
-    file_text = '{todo:"todovalue"}' #read_file_text(file_name) todo
+    """ Loads the json dictionary from the given file. """
+    file_text = '{todo:"todovalue"}'  # read_file_text(file_name) todo
     ret = parse_json_str(file_text)
     return ret
 
+
 def parse_json_str(json_str):
-    """
-    Parses the given json string in a dictionary.
-    """
+    """ Parses the given json string in a dictionary. """
     return json.loads(json_str, object_hook=decode_dict)
 
 
 def decode_list(data):
     rv = []
     for item in data:
-        if isinstance(item, str):
-            item = item#.encode('utf-8')
-            if type(item) == type(""):
-                if not item.isdigit():
-                    try:
-                        item = float(item)
-                    except:
-                        item = item
+        if isinstance(item, basestring):   # 2to3 20190915
+            item = str(item)  # .encode('utf-8')  # 2to3 20190915
+            if not item.isdigit():
+                try:
+                    item = float(item)
+                except:
+                    pass
         elif isinstance(item, list):
             item = decode_list(item)
         elif isinstance(item, dict):
@@ -50,14 +53,10 @@ def decode_list(data):
 def decode_dict(data):
     rv = {}
     for key, value in data.items():
-        if isinstance(key, str):
-            pass
-            # disabled for python 3
-            #key = key.encode('utf-8').decode('ascii')
-        if isinstance(value, str):
-            pass
-            # disabled for python 3
-            # value = value.encode('utf-8').decode('ascii')
+        if isinstance(key, basestring):  # 2to3 20190915
+            key = str(key)  # key.encode('utf-8').decode('ascii')  # 2to3 20190915
+        if isinstance(value, basestring):  # 2to3 20190915
+            value = str(value)   # value.encode('utf-8').decode('ascii')  # 2to3 20190915
         elif isinstance(value, list):
             value = decode_list(value)
         elif isinstance(value, dict):
@@ -67,7 +66,6 @@ def decode_dict(data):
 
 
 class NestedList(list):
-
     def __init__(self, iterable=[]):
         if iterable:
             super(NestedList, self).__init__([iterable])

@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -27,7 +27,7 @@ setup(
     author_email=pkg.__email__,
     url=pkg.__url__,
     license=pkg.__license__,
-    packages=(pkg.__name__,),
+    packages=find_packages(),
     package_data={pkg.__name__: list(pkg.__data__)},
     scripts=pkg.__scripts__,
     install_requires=pkg.__dependencies__,
@@ -41,6 +41,8 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',

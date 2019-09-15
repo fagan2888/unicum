@@ -11,7 +11,7 @@
 
 
 import inspect
-
+from six import with_metaclass
 
 class FactoryType(type):
 
@@ -29,9 +29,9 @@ class FactoryType(type):
         return default
 
 
-class FactoryObject(object, metaclass=FactoryType):
+class FactoryObject(with_metaclass(FactoryType, object)):  # 2to3 migration 20190915
     """ Objects identified by name """
-    # __metaclass__ = FactoryType  # to keep python 2.7 would require str vs. unicode battle for json, too :-(
+
     __factory = dict()
 
     def __init__(self, *args, **kwargs):
