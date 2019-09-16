@@ -74,7 +74,8 @@ class SessionHandler(object):
     def start_session(self, session_id):
         """ starts a session with given session_id """
 
-        assert session_id not in self._sessions
+        if session_id in self._sessions:
+            raise ValueError("Session of id %s exists already." % session_id)
 
         task_queue = Queue()
         result_queue = Queue()
@@ -104,7 +105,8 @@ class SessionHandler(object):
 
     def stop_session(self, session_id):
         """ closes a session with given session_id """
-        assert session_id in self._sessions
+        if session_id not in self._sessions:
+            raise ValueError("Session id %s not found." % session_id)
         session, task_queue, result_queue = self._sessions.pop(session_id)
         session.terminate()
         session.join()
@@ -152,10 +154,11 @@ class SessionHandler(object):
                 msg = 'first argument must either be subclass of %s or not attribute of %s' % cm
                 raise TypeError(msg)
 
-            msg = 'func %s must be method of %s' % (func, obj)
-            assert hasattr(obj, func), msg
+            if not hasattr(obj, func):
+                raise AttributeError('func %s must be method of %s' % (func, obj))
             func = getattr(obj, func)
-            assert ismethod(func), msg
+            if not ismethod(func):
+                raise AttributeError('func %s must be method of %s' % (func, obj))
 
             args = getargspec(func).args
             kwargs = dict(list(zip(args, list(kwargs.values()))))

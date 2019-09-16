@@ -159,7 +159,8 @@ class PersistentObject(object):
 
         if isinstance(property_name, str):
             property_name, property_value_variant = [property_name], [property_value_variant]
-        assert len(property_name) == len(property_value_variant)
+        if not len(property_name) == len(property_value_variant):
+            raise ValueError("List or tuple of property name and values fail to coincide in length.")
 
         # convert names into visible
         property_name = self.__class__._to_visible(property_name)

@@ -292,7 +292,8 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         if not isinstance(cell_len, (tuple, list)):
             cell = [cell_len] * len(rng)
         else:
-            assert len(cell_len) == len(rng)
+            if not len(cell_len) == len(rng):
+                raise RuntimeError("Error parsing data range line.")
             cell = cell_len
         if markers is not None:
             markerid = id(rng)

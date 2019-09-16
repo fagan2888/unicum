@@ -3,7 +3,7 @@
 # unicum
 # ------
 # Python library for simple object cache and factory.
-# 
+#
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
 # Version:  0.3, copyright Friday, 13 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
@@ -136,7 +136,8 @@ class DataRange(object):
         return len(self._row_keys)
 
     def __eq__(self, other):
-        assert isinstance(other, DataRange)
+        if not isinstance(other, DataRange):
+            raise TypeError('Cannot compare %s with %s.' % (self.__class__.__name__, other.__class__.__name__))
         return self.total_list == other.total_list
 
     def __contains__(self, key):
