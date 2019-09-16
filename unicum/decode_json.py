@@ -40,7 +40,7 @@ def decode_list(data):
             if not item.isdigit():
                 try:
                     item = float(item)
-                except TypeError:
+                except (TypeError, ValueError):
                     pass
         elif isinstance(item, list):
             item = decode_list(item)
