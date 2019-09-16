@@ -2,8 +2,11 @@
 unicum
 ======
 
-.. image:: https://img.shields.io/codeship/84595e40-4619-0135-2581-6682ffd1d80e/master.svg
-    :target: https://codeship.com//projects/231331
+.. image:: https://img.shields.io/codeship/dcea6660-ba19-0137-ce69-728d1edfce58/master.svg
+    :target: https://codeship.com//projects/364766
+
+.. image:: https://travis-ci.org/sonntagsgesicht/unicum.svg?branch=master
+    :target: https://travis-ci.org/sonntagsgesicht/unicum
 
 .. image:: https://readthedocs.org/projects/unicum/badge
     :target: http://unicum.readthedocs.io
