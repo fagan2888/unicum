@@ -22,9 +22,9 @@ Python library *unicum*
    :target: https://codeclimate.com/github/sonntagsgesicht/unicum/maintainability
    :alt: Code Climate maintainability
 
-.. image:: https://img.shields.io/codeclimate/coverage/sonntagsgesicht/unicum
-   :target: https://codeclimate.com/github/sonntagsgesicht/unicum/test_coverage
-   :alt: Code Climate Coverage
+.. image:: https://img.shields.io/codecov/c/github/sonntagsgesicht/unicum
+   :target: https://codecov.io/gh/sonntagsgesicht/unicum
+   :alt: Codecov
 
 .. image:: https://img.shields.io/lgtm/grade/python/g/sonntagsgesicht/unicum.svg
    :target: https://lgtm.com/projects/g/sonntagsgesicht/unicum/context:python/
