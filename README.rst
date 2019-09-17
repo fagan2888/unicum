@@ -4,7 +4,7 @@ Python library *unicum*
 
 .. image:: https://img.shields.io/codeship/dcea6660-ba19-0137-ce69-728d1edfce58/master.svg
    :target: https://codeship.com//projects/364766
-   :alt: Codeship
+   :alt: CodeShip
 
 .. image:: https://travis-ci.org/sonntagsgesicht/unicum.svg?branch=master
    :target: https://travis-ci.org/sonntagsgesicht/unicum
