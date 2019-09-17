@@ -441,21 +441,22 @@ class PersistentTest(TestCase):
         l.append(MyPO())
         s = l.to_serializable()
         self.assertNotEqual(l, s)
-        for i, j in zip(l, s):
-            if hasattr(i, 'to_serializable'):
-                i = i.to_serializable(1)
-            self.assertEqual(i, j)
-            # todo: add tests interacting with PersistenObject
+        for k in range(len(s)):
+            if hasattr(l[k], 'to_serializable'):
+                self.assertEqual(s[k], l[k].to_serializable(1))
+            else:
+                self.assertEqual(s[k], l[k])
 
     def test_persistentdict(self):
         l = PersistentDict({'A': 1, 'B': MyPO(), 'C': 'ABC'})
         s = l.to_serializable()
         self.assertNotEqual(l, s)
-        for i, j in zip(l, s):
-            if hasattr(i, 'to_serializable'):
-                i = i.to_serializable(1)
-            self.assertEqual(i, j)
-            # todo: add tests interacting with PersistenObject
+        for k in s.keys():
+            self.assertIn(k, l)
+            if hasattr(l[k], 'to_serializable'):
+                self.assertEqual(s[k], l[k].to_serializable(1))
+            else:
+                self.assertEqual(s[k], l[k])
 
 
 class DataRangeTest(TestCase):
