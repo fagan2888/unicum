@@ -5,7 +5,7 @@
 # Python library for simple object cache and factory.
 # 
 # Author:   sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]
-# Version:  0.3, copyright Friday, 13 September 2019
+# Version:  0.3, copyright Wednesday, 18 September 2019
 # Website:  https://github.com/sonntagsgesicht/unicum
 # License:  Apache License 2.0 (see LICENSE file)
 
@@ -18,7 +18,7 @@ logging.getLogger(__name__).addHandler(logging.NullHandler())
 __doc__ = 'Python library for simple object cache and factory.'
 __version__ = '0.3'
 __dev_status__ = '4 - Beta'
-__date__ = 'Friday, 13 September 2019'
+__date__ = 'Wednesday, 18 September 2019'
 __author__ = 'sonntagsgesicht, based on a fork of Deutsche Postbank [pbrisk]'
 __email__ = 'sonntagsgesicht@icloud.com'
 __url__ = 'https://github.com/sonntagsgesicht/' + __name__
